@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nyla 💜</title>
 
 <style>
@@ -25,7 +25,7 @@ body {
   position: relative;
   max-width: 700px;
   height: 100vh;
-  margin: auto;
+  margin: 0 auto;
   background: #16161f;
   display: flex;
   flex-direction: column;
@@ -33,8 +33,8 @@ body {
 }
 
 .chat-header {
-  padding: 1rem;
   background: #1a1a26;
+  padding: 1rem;
   border-bottom: 1px solid #2a2a3a;
 }
 
@@ -53,6 +53,7 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: bold;
+  color: white;
 }
 
 .status {
@@ -165,9 +166,9 @@ body {
 
 <canvas id="live2d-canvas"></canvas>
 
-<!-- 🔥 REQUIRED LIVE2D LIBS (ORDER MATTERS) -->
+<!-- REQUIRED LIVE2D LIBS -->
+<script src="https://unpkg.com/@cubism/live2dcubismcore@4.2.0/dist/live2dcubismcore.min.js"></script>
 <script src="https://unpkg.com/pixi.js@7.3.2/dist/pixi.min.js"></script>
-<script src="https://unpkg.com/@cubism/live2dcubismcore/dist/live2dcubismcore.min.js"></script>
 <script src="https://unpkg.com/pixi-live2d-display@0.4.0/dist/index.min.js"></script>
 
 <script>
@@ -185,7 +186,6 @@ function addMsg(text, cls, emo) {
   d.className = "msg " + cls;
   d.textContent = text;
   messages.appendChild(d);
-
   if (emo) {
     const e = document.createElement("div");
     e.className = "emotion";
@@ -200,7 +200,6 @@ async function sendMsg() {
   const text = input.value;
   input.value = "";
   addMsg(text, "user");
-
   try {
     const r = await fetch(API, {
       method: "POST",
@@ -224,16 +223,21 @@ async function sendMsg() {
     backgroundAlpha: 0
   });
 
-  const model = await PIXI.live2d.Live2DModel.from(
-    "./1113_v2/Z.model3.json"
-  );
+  try {
+    const model = await PIXI.live2d.Live2DModel.from(
+      "./1113_v2/Z.model3.json"
+    );
 
-  model.anchor.set(0.5, 1);
-  model.scale.set(0.45);
-  model.x = 180;
-  model.y = 560;
+    model.anchor.set(0.5, 1);
+    model.scale.set(0.45);
+    model.x = app.renderer.width / 2;
+    model.y = app.renderer.height;
 
-  app.stage.addChild(model);
+    app.stage.addChild(model);
+    console.log("Nyla Live2D loaded 💜");
+  } catch (e) {
+    console.error("Live2D failed:", e);
+  }
 })();
 </script>
 
