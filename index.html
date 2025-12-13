@@ -1,34 +1,37 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta charset="UTF-8">
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1, viewport-fit=cover"
+/>
+
 <title>Nyla 💜</title>
 
 <style>
-/* -------- RESET -------- */
+/* ---------- RESET ---------- */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
+
 html, body {
-  width: 100%;
   height: 100%;
 }
 
-/* -------- BODY -------- */
+/* ---------- BODY ---------- */
 body {
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  min-height: 100dvh;
   background: #0f0f1a;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   color: #e4e4e7;
-  overflow: hidden;
 }
 
-/* -------- APP LAYOUT (MOBILE SAFE) -------- */
+/* ---------- APP ---------- */
 .app {
-  position: fixed;
-  inset: 0;
+  min-height: 100dvh;
   max-width: 720px;
   margin: 0 auto;
   display: flex;
@@ -36,9 +39,9 @@ body {
   background: #16161f;
 }
 
-/* -------- HEADER -------- */
+/* ---------- HEADER ---------- */
 .header {
-  padding: 14px 16px;
+  padding: 16px;
   background: #1a1a26;
   border-bottom: 1px solid #2a2a3a;
   display: flex;
@@ -47,95 +50,104 @@ body {
 }
 
 .avatar {
-  width: 42px;
-  height: 42px;
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
   background: linear-gradient(135deg, #e879f9, #a78bfa);
   display: flex;
   align-items: center;
   justify-content: center;
   font-weight: 700;
+  color: white;
 }
 
-.header h1 {
-  font-size: 1.1rem;
+.header-text h1 {
+  font-size: 18px;
+  line-height: 1.2;
 }
-.status {
-  font-size: 0.75rem;
+
+.header-text span {
+  font-size: 12px;
   color: #a78bfa;
 }
 
-/* -------- MESSAGES -------- */
+/* ---------- MESSAGES ---------- */
 .messages {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1 1 auto;
+  min-height: 0;
   padding: 16px;
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow-y: auto;
 }
 
+/* ---------- MESSAGE ---------- */
 .msg {
   max-width: 75%;
-  padding: 10px 14px;
+  padding: 12px 14px;
   border-radius: 16px;
-  font-size: 0.95rem;
-  animation: fadeIn 0.2s ease;
+  font-size: 15px;
+  line-height: 1.5;
+  animation: pop 0.2s ease;
 }
 
-.user {
+@keyframes pop {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.msg.user {
   align-self: flex-end;
   background: linear-gradient(135deg, #e879f9, #a78bfa);
-  color: #fff;
+  color: white;
   border-bottom-right-radius: 4px;
 }
 
-.nyla {
+.msg.nyla {
   align-self: flex-start;
   background: #1e1e2e;
   border-bottom-left-radius: 4px;
 }
 
 .emotion {
-  font-size: 0.7rem;
-  opacity: 0.6;
+  font-size: 11px;
   margin-top: 4px;
+  opacity: 0.6;
   color: #a78bfa;
 }
 
-/* -------- INPUT -------- */
-.input {
-  padding: 12px;
+/* ---------- INPUT ---------- */
+.input-area {
+  padding: 14px;
   background: #1a1a26;
   border-top: 1px solid #2a2a3a;
   display: flex;
-  gap: 8px;
+  gap: 10px;
 }
 
-.input input {
+.input-area input {
   flex: 1;
   background: transparent;
-  border: 1px solid #2a2a3a;
-  border-radius: 20px;
-  padding: 10px 14px;
-  color: #e4e4e7;
+  border: none;
   outline: none;
+  color: #e4e4e7;
+  font-size: 15px;
 }
 
-.input button {
-  width: 42px;
-  height: 42px;
+.input-area button {
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
   border: none;
+  cursor: pointer;
   background: linear-gradient(135deg, #e879f9, #a78bfa);
   color: white;
-  font-size: 1.1rem;
+  font-size: 18px;
 }
 
-/* -------- ANIM -------- */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(6px); }
-  to { opacity: 1; transform: translateY(0); }
+.input-area button:disabled {
+  opacity: 0.5;
 }
 </style>
 </head>
@@ -143,60 +155,64 @@ body {
 <body>
 
 <div class="app">
+
+  <!-- HEADER -->
   <div class="header">
     <div class="avatar">N</div>
-    <div>
+    <div class="header-text">
       <h1>Nyla</h1>
-      <div class="status">online</div>
+      <span>online</span>
     </div>
   </div>
 
+  <!-- MESSAGES -->
   <div class="messages" id="messages"></div>
 
-  <div class="input">
+  <!-- INPUT -->
+  <div class="input-area">
     <input id="input" placeholder="Message Nyla..." autocomplete="off">
     <button id="send">➤</button>
   </div>
+
 </div>
 
 <script>
-/* -------- CONFIG -------- */
 const API_URL = "https://nyla-api.onrender.com/nyla";
 
-/* -------- ELEMENTS -------- */
 const messages = document.getElementById("messages");
 const input = document.getElementById("input");
 const send = document.getElementById("send");
 
-/* -------- EVENTS -------- */
-send.onclick = sendMessage;
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter") sendMessage();
-});
+let busy = false;
 
-/* -------- FUNCTIONS -------- */
+send.onclick = sendMessage;
+input.onkeydown = e => e.key === "Enter" && sendMessage();
+
 function addMessage(text, who, emotion) {
-  const msg = document.createElement("div");
-  msg.className = "msg " + who;
-  msg.textContent = text;
-  messages.appendChild(msg);
+  const box = document.createElement("div");
+  box.className = "msg " + who;
+  box.textContent = text;
 
   if (emotion && who === "nyla") {
     const emo = document.createElement("div");
     emo.className = "emotion";
     emo.textContent = emotion;
-    msg.appendChild(emo);
+    box.appendChild(emo);
   }
 
+  messages.appendChild(box);
   messages.scrollTop = messages.scrollHeight;
 }
 
 async function sendMessage() {
   const text = input.value.trim();
-  if (!text) return;
+  if (!text || busy) return;
 
   input.value = "";
   addMessage(text, "user");
+
+  busy = true;
+  send.disabled = true;
 
   try {
     const res = await fetch(API_URL, {
@@ -204,11 +220,15 @@ async function sendMessage() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message: text })
     });
+
     const data = await res.json();
     addMessage(data.reply, "nyla", data.emotion);
   } catch {
-    addMessage("I glitched 😭 try again", "nyla", "shocked");
+    addMessage("Nyla tripped 😭 try again", "nyla", "shocked");
   }
+
+  busy = false;
+  send.disabled = false;
 }
 </script>
 
