@@ -178,7 +178,7 @@ body {
     <div class="avatar">N</div>
     <div>
       <h1>Nyla</h1>
-      <div class="status">online</div>
+      <div class="status" id="status">online</div>
     </div>
   </div>
 
@@ -200,6 +200,7 @@ const app = document.getElementById("app");
 const messages = document.getElementById("messages");
 const input = document.getElementById("input");
 const send = document.getElementById("send");
+const statusText = document.getElementById("status");
 
 let busy = false;
 let typingBubble = null;
@@ -264,22 +265,7 @@ function loadHistory() {
   }
 
   chatHistory = JSON.parse(saved);
-  chatHistory.forEach(m => {
-    const msg = document.createElement("div");
-    msg.className = "msg " + m.sender;
-    msg.textContent = m.text;
-
-    if (m.emotion && m.sender === "nyla") {
-      const emo = document.createElement("div");
-      emo.className = "emotion";
-      emo.textContent = m.emotion;
-      msg.appendChild(emo);
-    }
-
-    messages.appendChild(msg);
-  });
-
-  messages.scrollTop = messages.scrollHeight;
+  chatHistory.forEach(m => addMessage(m.text, m.sender, m.emotion));
 }
 
 /* ================= SEND ================= */
@@ -303,7 +289,24 @@ async function sendMessage() {
 
     const data = await res.json();
     removeTyping();
+
     addMessage(data.reply, "nyla", data.emotion);
+
+    // 🔋 COOLDOWN MODE
+    if (data.cooldown) {
+      statusText.textContent = "recharging… 🔋";
+      input.placeholder = "Nyla is resting…";
+      send.disabled = true;
+
+      setTimeout(() => {
+        statusText.textContent = "online";
+        input.placeholder = "Message Nyla...";
+        send.disabled = false;
+        busy = false;
+      }, 60_000);
+
+      return;
+    }
 
   } catch {
     removeTyping();
