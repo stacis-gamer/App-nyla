@@ -6,7 +6,6 @@
 <title>Nyla 💜</title>
 
 <style>
-/* ========= THEME ========= */
 :root {
   --bg: #0f0f1a;
   --panel: #16161f;
@@ -16,7 +15,6 @@
   --accent-grad: linear-gradient(135deg, #e879f9, #a78bfa);
 }
 
-/* ========= RESET ========= */
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { height: 100%; }
 
@@ -27,7 +25,6 @@ body {
   min-height: 100dvh;
 }
 
-/* ========= APP ========= */
 .app {
   min-height: 100dvh;
   max-width: 720px;
@@ -38,14 +35,14 @@ body {
   transition: box-shadow 0.4s ease;
 }
 
-/* ========= HEADER ========= */
+/* HEADER */
 .header {
   padding: 16px;
   background: var(--header);
   border-bottom: 1px solid #2a2a3a;
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 12px;
 }
 
 .avatar {
@@ -62,7 +59,7 @@ body {
 .header h1 { font-size: 18px; }
 .status { font-size: 12px; color: var(--accent); }
 
-/* ========= MESSAGES ========= */
+/* MESSAGES */
 .messages {
   flex: 1 1 auto;
   min-height: 0;
@@ -73,7 +70,7 @@ body {
   gap: 12px;
 }
 
-/* ========= MESSAGE ========= */
+/* MESSAGE */
 .msg {
   max-width: 75%;
   padding: 12px 14px;
@@ -101,7 +98,6 @@ body {
   border-bottom-left-radius: 4px;
 }
 
-/* ========= EMOTION LABEL ========= */
 .emotion {
   font-size: 11px;
   margin-top: 4px;
@@ -109,7 +105,7 @@ body {
   color: var(--accent);
 }
 
-/* ========= TYPING INDICATOR ========= */
+/* TYPING */
 .typing {
   display: flex;
   gap: 6px;
@@ -135,7 +131,7 @@ body {
   40% { transform: scale(1.2); opacity: 1; }
 }
 
-/* ========= INPUT ========= */
+/* INPUT */
 .input-area {
   padding: 14px;
   background: var(--header);
@@ -166,13 +162,12 @@ body {
 
 .input-area button:disabled { opacity: 0.5; }
 
-/* ========= EMOTION UI EFFECTS ========= */
+/* EMOTION UI */
 .app.happy   { box-shadow: 0 0 25px rgba(232,121,249,.35); }
 .app.blush   { box-shadow: 0 0 30px rgba(167,139,250,.45); }
 .app.angry   { box-shadow: 0 0 30px rgba(239,68,68,.45); }
 .app.excited { box-shadow: 0 0 35px rgba(56,189,248,.45); }
 .app.sleepy  { box-shadow: 0 0 20px rgba(148,163,184,.35); }
-
 </style>
 </head>
 
@@ -196,10 +191,11 @@ body {
 </div>
 
 <script>
-/* ========= CONFIG ========= */
+/* ================= CONFIG ================= */
 const API = "https://nyla-api.onrender.com/nyla";
+const STORAGE_KEY = "nyla_chat_history";
 
-/* ========= ELEMENTS ========= */
+/* ================= ELEMENTS ================= */
 const app = document.getElementById("app");
 const messages = document.getElementById("messages");
 const input = document.getElementById("input");
@@ -207,19 +203,22 @@ const send = document.getElementById("send");
 
 let busy = false;
 let typingBubble = null;
+let chatHistory = [];
 
-/* ========= EVENTS ========= */
+/* ================= LOAD HISTORY ================= */
+loadHistory();
+
+/* ================= EVENTS ================= */
 send.onclick = sendMessage;
 input.onkeydown = e => e.key === "Enter" && sendMessage();
 
-/* ========= HELPERS ========= */
-function addMessage(text, who, emotion) {
+/* ================= FUNCTIONS ================= */
+function addMessage(text, sender, emotion = "") {
   const msg = document.createElement("div");
-  msg.className = "msg " + who;
+  msg.className = "msg " + sender;
   msg.textContent = text;
-  messages.appendChild(msg);
 
-  if (emotion && who === "nyla") {
+  if (emotion && sender === "nyla") {
     const emo = document.createElement("div");
     emo.className = "emotion";
     emo.textContent = emotion;
@@ -227,7 +226,11 @@ function addMessage(text, who, emotion) {
     triggerEmotionUI(emotion);
   }
 
+  messages.appendChild(msg);
   messages.scrollTop = messages.scrollHeight;
+
+  chatHistory.push({ text, sender, emotion });
+  saveHistory();
 }
 
 function showTyping() {
@@ -248,7 +251,38 @@ function triggerEmotionUI(emotion) {
   setTimeout(() => app.className = "app", 1200);
 }
 
-/* ========= SEND ========= */
+/* ================= STORAGE ================= */
+function saveHistory() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
+}
+
+function loadHistory() {
+  const saved = localStorage.getItem(STORAGE_KEY);
+  if (!saved) {
+    addMessage("Heyyy 💜 I’m Nyla. Talk to me~", "nyla", "excited");
+    return;
+  }
+
+  chatHistory = JSON.parse(saved);
+  chatHistory.forEach(m => {
+    const msg = document.createElement("div");
+    msg.className = "msg " + m.sender;
+    msg.textContent = m.text;
+
+    if (m.emotion && m.sender === "nyla") {
+      const emo = document.createElement("div");
+      emo.className = "emotion";
+      emo.textContent = m.emotion;
+      msg.appendChild(emo);
+    }
+
+    messages.appendChild(msg);
+  });
+
+  messages.scrollTop = messages.scrollHeight;
+}
+
+/* ================= SEND ================= */
 async function sendMessage() {
   const text = input.value.trim();
   if (!text || busy) return;
@@ -279,9 +313,6 @@ async function sendMessage() {
   busy = false;
   send.disabled = false;
 }
-
-/* ========= GREETING ========= */
-addMessage("Heyyy 💜 I’m Nyla. Talk to me~", "nyla", "excited");
 </script>
 
 </body>
