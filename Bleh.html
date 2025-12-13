@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>The Sentinels — Music Player (Responsive Fixes)</title>
+  <style>
+    :root{
+      --bg1:#071021;
+      --bg2:#0b1220;
+      --neon-purple: #a855f7;
+      --neon-cyan: #22d3ee;
+      --neon-green: #16a34a;
+      --muted: rgba(255,255,255,0.12);
+      --glass: rgba(255,255,255,0.04);
+      --card-border: rgba(255,255,255,0.08);
+      --accent-gradient: linear-gradient(90deg,var(--neon-cyan),var(--neon-purple));
+      --shadow: 0 10px 30px rgba(2,6,23,0.8);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      background: radial-gradient(1200px 600px at 75% 10%, rgba(168,85,247,0.12), transparent 10%),
+                  radial-gradient(900px 500px at 20% 80%, rgba(34,211,238,0.06), transparent 10%),
+                  linear-gradient(180deg,var(--bg1),var(--bg2));
+      color:#e6eef8;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      padding:18px;
+    }
+
+    /* Player root */
+    .player {
+      width:100%;
+      max-width:980px;
+      border-radius:18px;
+      background: linear-gradient(180deg, rgba(10,12,20,0.86), rgba(6,8,12,0.78));
+      border:1px solid var(--card-border);
+      padding:20px;
+      display:flex;
+      gap:18px;
+      box-shadow: var(--shadow);
+      position:relative;
+      overflow:hidden;
+      align-items:stretch;
+    }
+
+    /* Poster background glow */
+    .bg-poster {
+      position:absolute;
+      inset:0;
+      background-image:url('sentinels-poster.jpg');
+      background-size:cover;
+      background-position:center;
+      opacity:0.12;
+      filter: blur(6px) brightness(0.38);
+      pointer-events:none;
+      mix-blend-mode:screen;
+    }
+
+    /* left column */
+    .left {
+      width:150px;
+      min-width:110px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      align-items:center;
+    }
+
+    .cover {
+      width:150px;
+      height:150px;
+      border-radius:12px;
+      background-image:url('sentinels-poster.jpg');
+      background-size:cover;
+      background-position:center;
+      position:relative;
+      box-shadow:0 8px 26px rgba(0,0,0,0.6), 0 0 36px rgba(168,85,247,0.06);
+      border:1px solid rgba(255,255,255,0.05);
+      overflow:hidden;
+      flex-shrink:0;
+    }
+    .cover:after{
+      content:"";
+      position:absolute;inset:0;border-radius:12px;
+      background: linear-gradient(180deg, rgba(0,0,0,0.24), transparent 40%);
+    }
+    .title-badge{
+      position:absolute;
+      left:10px;
+      bottom:10px;
+      font-size:11px;
+      padding:6px 8px;
+      border-radius:999px;
+      background: linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      backdrop-filter: blur(4px);
+      border:1px solid rgba(255,255,255,0.06);
+      color:#fff;
+      font-weight:600;
+      letter-spacing:0.4px;
+    }
+
+    .meta {
+      text-align:center;
+      width:100%;
+    }
+    .meta .label{font-size:11px;color:rgba(170,240,255,0.9);text-transform:uppercase;letter-spacing:1.2px}
+    .meta h1{margin:6px 0 0;font-size:16px;line-height:1.05}
+    .meta p{margin:4px 0 0;color:rgba(255,255,255,0.7);font-size:13px}
+
+    /* center column */
+    .center {
+      flex:1;
+      display:flex;
+      flex-direction:column;
+      justify-content:space-between;
+      min-width:0;
+    }
+
+    .progress-wrap{margin-top:6px}
+    .seek{
+      -webkit-appearance:none;
+      appearance:none;
+      width:100%;
+      height:10px;
+      border-radius:999px;
+      background:linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04));
+      outline:none;
+      overflow:hidden;
+      position:relative;
+    }
+    .seek::-webkit-slider-thumb{
+      -webkit-appearance:none;
+      width:16px;height:16px;border-radius:50%;
+      background:var(--neon-purple);
+      border:3px solid white;
+      margin-top:-3px;
+      box-shadow:0 6px 20px rgba(168,85,247,0.35), 0 0 12px rgba(168,85,247,0.5), 0 0 6px rgba(34,211,238,0.08);
+      cursor:pointer;
+    }
+    .seek::-moz-range-thumb{
+      width:16px;height:16px;border-radius:50%;background:var(--neon-purple);border:3px solid white;cursor:pointer;
+    }
+    /* filled part uses CSS var updated by JS */
+    .seek::before{
+      content:"";
+      position:absolute;left:0;top:0;height:100%;
+      width:var(--seek-percent,0%);
+      background:var(--accent-gradient);
+      filter:drop-shadow(0 6px 20px rgba(168,85,247,0.14));
+      border-radius:999px;
+      z-index:0;
+    }
+    .time-row{
+      display:flex;
+      justify-content:space-between;
+      font-size:12px;
+      color:rgba(255,255,255,0.75);
+      margin-top:8px;
+    }
+
+    .controls{
+      margin-top:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:18px;
+    }
+
+    .btn {
+      background:transparent;
+      border:0;
+      color:#ffffffcc;
+      cursor:pointer;
+      padding:8px;
+      display:inline-grid;
+      place-items:center;
+      border-radius:999px;
+      transition: transform .12s ease, color .12s ease;
+    }
+    .btn:active{ transform:translateY(1px) }
+    .btn:hover{ transform:translateY(-4px); color:white }
+
+    .big-button{
+      width:64px;height:64px;border-radius:999px;background:white;display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,0,0,0.6);
+      flex-shrink:0;
+    }
+    .big-button svg{ color:var(--neon-purple) }
+
+    /* right column */
+    .right {
+      width:200px;
+      display:flex;
+      flex-direction:column;
+      gap:12px;
+      align-items:flex-end;
+    }
+    .mode {
+      background:linear-gradient(90deg, rgba(255,255,255,0.03), rgba(255,255,255,0.02));
+      padding:8px 12px;border-radius:999px;border:1px solid rgba(255,255,255,0.04);
+      font-size:12px;color:#dfe9ff;font-weight:700;
+    }
+
+    .volume-row {
+      display:flex;align-items:center;gap:12px;width:100%;
+    }
+
+    .vol {
+      width:120px;
+    }
+    .vol input[type=range]{
+      -webkit-appearance:none;height:8px;border-radius:999px;width:100%;
+      background:linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.04));
+      position:relative;overflow:hidden;
+    }
+    .vol input[type=range]::-webkit-slider-thumb{
+      -webkit-appearance:none;width:14px;height:14px;border-radius:50%;background:var(--neon-cyan);border:3px solid white;margin-top:-3px;cursor:pointer;
+      box-shadow:0 6px 16px rgba(34,211,238,0.16), 0 0 10px rgba(168,85,247,0.06);
+    }
+
+    .vol input[type=range]::before{
+      content:"";position:absolute;left:0;top:0;height:8px;width:var(--vol-percent,0%);background:linear-gradient(90deg,var(--neon-green),var(--neon-purple));border-radius:999px;
+    }
+
+    .bars{
+      display:flex;gap:6px;align-items:end;
+      padding:6px 0;
+      width:100%;
+    }
+    .bar{
+      width:8px;background:linear-gradient(180deg,var(--neon-purple),var(--neon-cyan));height:6px;border-radius:3px;transition:height 180ms ease;
+      box-shadow:0 4px 14px rgba(168,85,247,0.09);
+    }
+
+    .footer-badge{
+      margin-top:14px;text-align:center;width:100%;
+    }
+    .pill{
+      display:inline-block;padding:10px 18px;border-radius:999px;background:linear-gradient(90deg, rgba(255,255,255,0.04), rgba(255,255,255,0.03));border:1px solid rgba(255,255,255,0.06);
+      font-size:13px;font-weight:700;color:#fff;
+    }
+
+    /* -----------------------
+       RESPONSIVE FIXES (key)
+       ----------------------- */
+    @media (max-width:920px){
+      .player{max-width:720px;padding:16px;gap:14px}
+      .left{width:120px}
+      .cover{width:120px;height:120px;border-radius:10px}
+      .big-button{width:56px;height:56px}
+      .right{width:160px}
+      .meta h1{font-size:15px}
+    }
+
+    /* Mobile adjustments: behaves like your screenshot but fixed */
+    @media (max-width:520px){
+      body{padding:12px}
+      .player{
+        flex-direction:row; /* keep compact row for poster + controls */
+        align-items:flex-start;
+        gap:12px;
+        padding:12px;
+        max-width:420px; /* force tight layout */
+      }
+
+      .bg-poster{opacity:0.08;filter: blur(4px) brightness(0.36) }
+
+      /* shrink left column a lot */
+      .left{
+        width:92px;
+        min-width:72px;
+        gap:8px;
+      }
+      .cover{width:92px;height:92px;border-radius:10px}
+      .title-badge{font-size:10px;left:8px;bottom:8px;padding:5px 7px}
+
+      /* shrink meta */
+      .meta{align-self:center;margin-left:6px}
+      .meta .label{font-size:10px}
+      .meta h1{font-size:13px}
+      .meta p{font-size:12px}
+
+      /* center content should shrink */
+      .center{min-width:0;padding-right:0}
+      .seek{height:8px}
+      .seek::-webkit-slider-thumb{width:14px;height:14px;margin-top:-3px}
+      .time-row{font-size:11px}
+
+      .controls{gap:12px}
+      .big-button{width:54px;height:54px}
+      .big-button svg{width:22px;height:22px}
+
+      /* hide the right column on tiny screens (saves space) */
+      .right{display:none}
+
+      .footer-badge{display:none} /* optional to keep UI compact like your screenshot */
+    }
+
+    @media (max-width:360px){
+      .player{max-width:340px;padding:10px;gap:10px}
+      .cover{width:78px;height:78px}
+      .left{width:78px}
+      .big-button{width:48px;height:48px}
+      .meta h1{font-size:12px}
+    }
+
+  </style>
+</head>
+<body>
+  <div class="player" role="application" aria-label="Sentinels music player">
+    <div class="bg-poster" aria-hidden="true"></div>
+
+    <div class="left" aria-hidden="false">
+      <div class="cover" id="cover">
+        <div class="title-badge">THE SENTINELS</div>
+      </div>
+
+      <div class="meta" style="align-self:flex-start;margin-left:6px;">
+        <div class="label">Soundtrack</div>
+        <h1 id="songTitle">Theme — THE SENTINELS</h1>
+        <p id="artist">Evolution Orchestra</p>
+      </div>
+    </div>
+
+    <div class="center">
+      <!-- Audio element (use Sentinels_theme.mp3) -->
+      <audio id="audio" src="Sentinels_theme.mp3" preload="metadata"></audio>
+
+      <!-- Progress -->
+      <div class="progress-wrap">
+        <input id="seek" class="seek" type="range" min="0" max="0" value="0" step="0.01" aria-label="Seek" />
+        <div class="time-row">
+          <div id="currentTime">0:00</div>
+          <div id="duration">0:00</div>
+        </div>
+      </div>
+
+      <!-- Controls -->
+      <div class="controls" role="group" aria-label="player controls">
+        <button id="back" class="btn" title="Back 10s" aria-label="Back 10 seconds">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M19 20V4L10 12L19 20Z" fill="currentColor" opacity="0.9"/>
+            <path d="M5 20V4L2 4V20L5 20Z" fill="currentColor" opacity="0.9" />
+          </svg>
+        </button>
+
+        <button id="play" class="big-button" aria-label="Play">
+          <svg id="playIcon" width="28" height="28" viewBox="0 0 24 24" fill="none">
+            <path d="M5 3v18l15-9L5 3z" fill="currentColor"></path>
+          </svg>
+          <svg id="pauseIcon" width="28" height="28" viewBox="0 0 24 24" fill="none" style="display:none">
+            <path d="M6 6h4v12H6zM14 6h4v12h-4z" fill="currentColor"></path>
+          </svg>
+        </button>
+
+        <button id="forward" class="btn" title="Forward 10s" aria-label="Forward 10 seconds">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <path d="M5 4v16l9-8L5 4z" fill="currentColor" opacity="0.9"/>
+            <path d="M19 4v16h-3V4h3z" fill="currentColor" opacity="0.9" />
+          </svg>
+        </button>
+      </div>
+
+      <!-- Volume + visualizer -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px;gap:14px;">
+        <div class="volume-row" style="flex:1;">
+          <button id="mute" class="btn" title="Mute/unmute" aria-label="mute">
+            <svg id="volOn" width="18" height="18" viewBox="0 0 24 24" fill="none">
+              <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor"></path>
+              <path d="M19 8a5 5 0 010 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+            <svg id="volOff" width="18" height="18" viewBox="0 0 24 24" fill="none" style="display:none">
+              <path d="M11 5L6 9H2v6h4l5 4V5z" fill="currentColor"></path>
+              <path d="M19 5L5 19" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"></path>
+            </svg>
+          </button>
+
+          <div class="vol" style="position:relative;">
+            <input id="volume" type="range" min="0" max="1" step="0.01" value="0.7" aria-label="volume" />
+          </div>
+        </div>
+
+        <div style="width:170px;">
+          <div style="font-size:12px;color:#bcdffd;margin-bottom:8px;font-weight:700">EQ · Cinematic · Hybrid</div>
+          <div class="bars" aria-hidden="true">
+            <div class="bar" id="b1"></div>
+            <div class="bar" id="b2"></div>
+            <div class="bar" id="b3"></div>
+            <div class="bar" id="b4"></div>
+            <div class="bar" id="b5"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="right">
+      <div class="mode">Sentinel Mode</div>
+      <div style="text-align:right;font-size:12px;color:rgba(255,255,255,0.7);">Official Theme</div>
+    </div>
+  </div>
+
+  <div class="footer-badge"><span class="pill">THE SENTINELS — Evolution Begins</span></div>
+
+  <script>
+    // ====== Elements ======
+    const audio = document.getElementById('audio');
+    const playBtn = document.getElementById('play');
+    const playIcon = document.getElementById('playIcon');
+    const pauseIcon = document.getElementById('pauseIcon');
+    const backBtn = document.getElementById('back');
+    const forwardBtn = document.getElementById('forward');
+    const seek = document.getElementById('seek');
+    const currentTimeEl = document.getElementById('currentTime');
+    const durationEl = document.getElementById('duration');
+    const volume = document.getElementById('volume');
+    const muteBtn = document.getElementById('mute');
+    const volOn = document.getElementById('volOn');
+    const volOff = document.getElementById('volOff');
+    const bars = [document.getElementById('b1'),document.getElementById('b2'),document.getElementById('b3'),document.getElementById('b4'),document.getElementById('b5')];
+
+    // ====== Defaults ======
+    let isPlaying = false;
+    let isMuted = false;
+    let lastVolume = parseFloat(volume.value) || 0.7;
+
+    function safeFormatTime(t){
+      if (!isFinite(t) || isNaN(t)) return '0:00';
+      const minutes = Math.floor(t / 60);
+      const seconds = Math.floor(t % 60);
+      const s = seconds < 10 ? '0' + seconds : '' + seconds;
+      return minutes + ':' + s;
+    }
+
+    function updateSeekUI(){
+      const dur = audio.duration || 0;
+      const cur = audio.currentTime || 0;
+      const pct = dur ? (cur / dur) * 100 : 0;
+      seek.style.setProperty('--seek-percent', pct + '%');
+      seek.max = dur || 0;
+      seek.value = cur || 0;
+      currentTimeEl.textContent = safeFormatTime(cur);
+      durationEl.textContent = safeFormatTime(dur);
+      seek.style.background = `linear-gradient(90deg, ${'rgba(34,211,238,0.9)'} 0%, ${'rgba(168,85,247,0.9)'} ${pct}%, rgba(255,255,255,0.06) ${pct}%)`;
+    }
+
+    function updateVolumeUI(){
+      const v = isMuted ? 0 : parseFloat(volume.value);
+      volume.style.setProperty('--vol-percent', (v*100) + '%');
+      volume.style.background = `linear-gradient(90deg, ${'rgba(22,163,74,0.95)'} 0%, ${'rgba(168,85,247,0.95)'} ${(v*100)}%, rgba(255,255,255,0.06) ${(v*100)}%)`;
+      if (v === 0){ volOn.style.display = 'none'; volOff.style.display = 'inline'; }
+      else { volOn.style.display = 'inline'; volOff.style.display = 'none'; }
+    }
+
+    // play/pause
+    playBtn.addEventListener('click', () => {
+      if (!audio.src) return;
+      if (audio.paused){
+        audio.play().catch(e=>console.warn('play blocked',e));
+      } else {
+        audio.pause();
+      }
+    });
+
+    audio.addEventListener('play', () => {
+      isPlaying = true;
+      playIcon.style.display = 'none';
+      pauseIcon.style.display = 'inline';
+    });
+    audio.addEventListener('pause', () => {
+      isPlaying = false;
+      playIcon.style.display = 'inline';
+      pauseIcon.style.display = 'none';
+    });
+
+    audio.addEventListener('timeupdate', () => { updateSeekUI(); });
+    audio.addEventListener('loadedmetadata', () => { updateSeekUI(); });
+    audio.addEventListener('ended', () => { isPlaying=false; playIcon.style.display='inline'; pauseIcon.style.display='none'; });
+
+    seek.addEventListener('input', (e) => { const t = parseFloat(e.target.value); audio.currentTime = t; updateSeekUI(); });
+
+    backBtn.addEventListener('click', () => { const t = Math.max((audio.currentTime || 0) - 10, 0); audio.currentTime = t; updateSeekUI(); });
+    forwardBtn.addEventListener('click', () => { const dur = audio.duration || 0; const t = Math.min((audio.currentTime || 0) + 10, dur); audio.currentTime = t; updateSeekUI(); });
+
+    volume.addEventListener('input', (e) => {
+      const v = parseFloat(e.target.value);
+      lastVolume = v;
+      audio.volume = v;
+      isMuted = (v === 0);
+      updateVolumeUI();
+    });
+
+    muteBtn.addEventListener('click', () => {
+      if (!isMuted){
+        lastVolume = parseFloat(volume.value);
+        audio.volume = 0;
+        volume.value = 0;
+        isMuted = true;
+      } else {
+        isMuted = false;
+        audio.volume = lastVolume || 0.7;
+        volume.value = audio.volume;
+      }
+      updateVolumeUI();
+    });
+
+    // init
+    audio.volume = parseFloat(volume.value);
+    updateVolumeUI();
+    updateSeekUI();
+
+    // small fake visualizer
+    function animBars(){
+      const playingFactor = !audio.paused ? 1 : 0.08;
+      const volFactor = isMuted ? 0 : (audio.volume || 0.7);
+      bars.forEach((b,i) => {
+        const base = (i + 1) * 5;
+        const variance = Math.abs(Math.sin((Date.now()/350) + i)) * 12;
+        const h = Math.max(4, Math.round(base * volFactor * playingFactor + variance * volFactor));
+        b.style.height = h + 'px';
+      });
+      requestAnimationFrame(animBars);
+    }
+    animBars();
+
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'Space'){ e.preventDefault(); playBtn.click(); }
+      if (e.code === 'ArrowLeft'){ backBtn.click(); }
+      if (e.code === 'ArrowRight'){ forwardBtn.click(); }
+    });
+
+    audio.addEventListener('error', (e) => {
+      console.warn('Audio failed to load. Make sure Sentinels_theme.mp3 is in same folder.', e);
+      durationEl.textContent = '0:00';
+    });
+
+  </script>
+</body>
+</html>
+
