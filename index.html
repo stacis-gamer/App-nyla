@@ -16,6 +16,7 @@
   --u2:#a78bfa;
   --text:#e4e4e7;
 }
+
 *{margin:0;padding:0;box-sizing:border-box}
 body{
   background:var(--bg);
@@ -34,8 +35,6 @@ body{
   background:var(--panel);
   border-left:1px solid var(--border);
   border-right:1px solid var(--border);
-  position:relative;
-  overflow:hidden;
 }
 
 /* HEADER */
@@ -44,10 +43,9 @@ body{
   background:var(--header);
   border-bottom:1px solid var(--border);
   display:flex;
-  justify-content:space-between;
   align-items:center;
+  gap:.75rem;
 }
-.header-left{display:flex;gap:.75rem;align-items:center}
 .avatar{
   width:42px;height:42px;border-radius:50%;
   background:linear-gradient(135deg,var(--u1),var(--u2));
@@ -122,7 +120,7 @@ body{
   color:#fff;
 }
 
-/* LOGIN OVERLAY */
+/* LOGIN */
 .login{
   position:fixed;
   inset:0;
@@ -168,12 +166,10 @@ body{
 
 <div class="app">
   <div class="header">
-    <div class="header-left">
-      <div class="avatar">N</div>
-      <div>
-        <div>Nyla</div>
-        <div class="status">online</div>
-      </div>
+    <div class="avatar">N</div>
+    <div>
+      <div>Nyla</div>
+      <div class="status">online</div>
     </div>
   </div>
 
@@ -214,49 +210,31 @@ const input = document.getElementById("input");
 const send = document.getElementById("send");
 const login = document.getElementById("login");
 
-let currentUser = null;
-let chatsLoaded = false;
+let userId = "guest";
 let typingBubble = null;
 
 /* ================= AUTH ================= */
 async function init(){
   const { data } = await supabase.auth.getSession();
-  currentUser = data.session?.user || null;
-
-  if(currentUser){
-    login.style.display = "none";
-    loadCloudChats();
+  if(data.session?.user){
+    userId = data.session.user.id;
+    login.style.display="none";
   }
 }
 init();
 
-supabase.auth.onAuthStateChange((_, session)=>{
-  if(session?.user){
-    currentUser = session.user;
-    login.style.display = "none";
-    chatsLoaded = false;
-    loadCloudChats();
-  }
-});
-
 async function signIn(){
-  await supabase.auth.signInWithPassword({
-    email:email.value,
-    password:password.value
-  });
+  await supabase.auth.signInWithPassword({ email:email.value, password:password.value });
 }
 async function signUp(){
-  await supabase.auth.signUp({
-    email:email.value,
-    password:password.value
-  });
+  await supabase.auth.signUp({ email:email.value, password:password.value });
 }
 async function google(){
   await supabase.auth.signInWithOAuth({ provider:"google" });
 }
 function guest(){
   login.style.display="none";
-  loadLocalChats();
+  userId = "guest";
 }
 
 /* ================= UI ================= */
@@ -265,6 +243,7 @@ function render(text,sender,emotion){
   m.className="msg "+sender;
   m.textContent=text;
   msgs.appendChild(m);
+
   if(emotion){
     const e=document.createElement("div");
     e.className="emotion";
@@ -275,6 +254,7 @@ function render(text,sender,emotion){
 }
 
 function showTyping(){
+  if(typingBubble) return;
   typingBubble=document.createElement("div");
   typingBubble.className="msg nyla";
   typingBubble.innerHTML=`
@@ -304,64 +284,19 @@ async function sendMsg(){
   render(text,"user");
   showTyping();
 
-  if(currentUser){
-    await supabase.from("nyla_messages")
-      .insert({ user_id:currentUser.id, sender:"user", text });
-  }else{
-    saveLocal({sender:"user",text});
-  }
-
   try{
     const r=await fetch(API,{
       method:"POST",
       headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ message:text })
+      body:JSON.stringify({ message:text, userId })
     });
     const d=await r.json();
     hideTyping();
     render(d.reply,"nyla",d.emotion);
-
-    if(currentUser){
-      await supabase.from("nyla_messages")
-        .insert({
-          user_id:currentUser.id,
-          sender:"nyla",
-          text:d.reply,
-          emotion:d.emotion
-        });
-    }else{
-      saveLocal({sender:"nyla",text:d.reply,emotion:d.emotion});
-    }
   }catch{
     hideTyping();
-    render("I’m recharging 🔋","nyla","sleepy");
+    render("I’m recharging rn 🔋","nyla","sleepy");
   }
-}
-
-/* ================= LOAD ================= */
-async function loadCloudChats(){
-  if(chatsLoaded) return;
-  chatsLoaded = true;
-
-  msgs.innerHTML="";
-  const { data } = await supabase
-    .from("nyla_messages")
-    .select("*")
-    .eq("user_id", currentUser.id)
-    .order("created_at",{ascending:true});
-
-  data?.forEach(m=>render(m.text,m.sender,m.emotion));
-}
-
-/* ================= LOCAL ================= */
-function saveLocal(m){
-  const a=JSON.parse(localStorage.getItem("nyla_local")||"[]");
-  a.push(m);
-  localStorage.setItem("nyla_local",JSON.stringify(a));
-}
-function loadLocalChats(){
-  const a=JSON.parse(localStorage.getItem("nyla_local")||"[]");
-  a.forEach(m=>render(m.text,m.sender,m.emotion));
 }
 </script>
 
