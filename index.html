@@ -6,7 +6,6 @@
 <title>Nyla 💜</title>
 
 <style>
-/* SAME STYLES — untouched */
 :root{
   --bg:#0f0f1a;
   --panel:#16161f;
@@ -17,13 +16,17 @@
   --u2:#a78bfa;
   --text:#e4e4e7;
 }
+
 *{margin:0;padding:0;box-sizing:border-box}
+
 body{
   background:var(--bg);
   color:var(--text);
   min-height:100svh;
   font-family:system-ui,sans-serif;
 }
+
+/* ================= APP ================= */
 .app{
   max-width:720px;
   margin:0 auto;
@@ -36,6 +39,8 @@ body{
   position:relative;
   overflow:hidden;
 }
+
+/* HEADER */
 .header{
   padding:1rem;
   background:var(--header);
@@ -52,8 +57,8 @@ body{
   font-weight:700;color:#fff;
 }
 .status{font-size:.75rem;color:var(--u2)}
-.settings-btn{font-size:1.3rem;cursor:pointer}
 
+/* MESSAGES */
 .messages{
   flex:1;
   overflow-y:auto;
@@ -62,10 +67,28 @@ body{
   flex-direction:column;
   gap:.75rem;
 }
-.msg{max-width:75%;padding:.75rem 1rem;border-radius:16px}
-.user{align-self:flex-end;background:linear-gradient(135deg,var(--u1),var(--u2));color:#fff}
-.nyla{align-self:flex-start;background:var(--bubble)}
+.msg{
+  max-width:75%;
+  padding:.75rem 1rem;
+  border-radius:16px;
+}
+.user{
+  align-self:flex-end;
+  background:linear-gradient(135deg,var(--u1),var(--u2));
+  color:#fff;
+}
+.nyla{
+  align-self:flex-start;
+  background:var(--bubble);
+}
+.emotion{
+  font-size:.7rem;
+  opacity:.7;
+  color:var(--u2);
+  margin-top:4px;
+}
 
+/* INPUT */
 .input{
   display:flex;
   gap:.5rem;
@@ -74,33 +97,155 @@ body{
   border-top:1px solid var(--border);
 }
 .input input{
-  flex:1;background:none;border:none;outline:none;color:var(--text)
+  flex:1;
+  background:none;
+  border:none;
+  outline:none;
+  color:var(--text);
+  font-size:1rem;
 }
 .input button{
   width:40px;height:40px;border-radius:50%;
-  border:none;background:linear-gradient(135deg,var(--u1),var(--u2));color:#fff
+  border:none;
+  background:linear-gradient(135deg,var(--u1),var(--u2));
+  color:#fff;
+  font-size:1.1rem;
+}
+
+/* NYLA PNG */
+#nyla{
+  position:absolute;
+  right:-10px;
+  bottom:90px;
+  width:260px;
+  pointer-events:none;
+}
+
+/* ================= LOGIN OVERLAY ================= */
+.login-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(10,10,20,.85);
+  backdrop-filter:blur(8px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  z-index:50;
+}
+
+.login-card{
+  width:320px;
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:1.5rem;
+  text-align:center;
+}
+
+.login-card h2{
+  margin-bottom:.25rem;
+}
+.login-card p{
+  font-size:.85rem;
+  opacity:.7;
+  margin-bottom:1rem;
+}
+
+.login-card input{
+  width:100%;
+  padding:.6rem;
+  margin-bottom:.6rem;
+  border-radius:10px;
+  border:1px solid var(--border);
+  background:var(--bubble);
+  color:var(--text);
+}
+
+.login-card button{
+  width:100%;
+  padding:.6rem;
+  border:none;
+  border-radius:10px;
+  margin-top:.4rem;
+  cursor:pointer;
+}
+
+.login-card .primary{
+  background:linear-gradient(135deg,var(--u1),var(--u2));
+  color:#fff;
+}
+
+.toggle{
+  margin-top:.6rem;
+  font-size:.8rem;
+}
+.toggle button{
+  background:none;
+  border:none;
+  color:var(--u2);
+  cursor:pointer;
+}
+
+.divider{
+  margin:1rem 0;
+  font-size:.75rem;
+  opacity:.5;
+}
+
+.google{
+  background:#fff;
+  color:#000;
+}
+
+.guest{
+  background:var(--bubble);
+  color:var(--text);
 }
 </style>
 </head>
 
 <body>
 
+<!-- LOGIN -->
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-card">
+    <h2>Nyla 💜</h2>
+    <p id="loginDesc">Welcome back</p>
+
+    <input id="email" type="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+
+    <button class="primary" id="authBtn" onclick="handleAuth()">Sign In</button>
+
+    <div class="toggle">
+      <span id="toggleText">New here?</span>
+      <button onclick="toggleMode()">Create account</button>
+    </div>
+
+    <div class="divider">or</div>
+
+    <button class="google" onclick="loginGoogle()">Continue with Google</button>
+    <button class="guest" onclick="continueGuest()">Continue as Guest</button>
+  </div>
+</div>
+
+<!-- APP -->
 <div class="app">
   <div class="header">
     <div class="header-left">
       <div class="avatar">N</div>
       <div>
         <div>Nyla</div>
-        <div class="status" id="mode">Guest mode</div>
+        <div class="status">online</div>
       </div>
     </div>
-    <button id="authBtn">Login</button>
   </div>
 
   <div class="messages" id="messages"></div>
+  <img id="nyla" src="assets/nyla/idle.png">
 
   <div class="input">
-    <input id="input" placeholder="Message Nyla…" autocomplete="off">
+    <input id="input" placeholder="Message Nyla…">
     <button id="send">➤</button>
   </div>
 </div>
@@ -110,57 +255,68 @@ body{
 /* ================= SUPABASE ================= */
 const supabase = window.supabase.createClient(
   "https://zdgsvguebwfecnlboxiq.supabase.co",
-  "YOUR_ANON_KEY_HERE"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZ3N2Z3VlYndmZWNubGJveGlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDgyNjMsImV4cCI6MjA4MTI4NDI2M30.SqAzHVqbA5YTgkhpxhEFlBhbLBNumVi4_lnSLoBuKR0"
 );
 
-const API = "https://nyla-api.onrender.com/nyla";
-const LOCAL_KEY = "nyla_guest_chats";
+const API="https://nyla-api.onrender.com/nyla";
 
-const msgs = document.getElementById("messages");
-const input = document.getElementById("input");
-const send = document.getElementById("send");
-const authBtn = document.getElementById("authBtn");
-const modeText = document.getElementById("mode");
+/* ================= LOGIN LOGIC ================= */
+let isSignup=false;
+let isGuest=false;
 
-let user = null;
+function toggleMode(){
+  isSignup=!isSignup;
+  document.getElementById("loginDesc").textContent =
+    isSignup ? "Create your account" : "Welcome back";
+  document.getElementById("authBtn").textContent =
+    isSignup ? "Sign Up" : "Sign In";
+  document.getElementById("toggleText").textContent =
+    isSignup ? "Already have an account?" : "New here?";
+}
 
-/* ========== AUTH STATE ========== */
-supabase.auth.getSession().then(({ data })=>{
-  user = data.session?.user || null;
-  updateMode();
-  loadChats();
-});
+async function handleAuth(){
+  const email=emailInput.value;
+  const password=passwordInput.value;
 
-supabase.auth.onAuthStateChange((_event, session)=>{
-  user = session?.user || null;
-  updateMode();
-  msgs.innerHTML="";
-  loadChats();
-});
-
-function updateMode(){
-  if(user){
-    modeText.textContent="Cloud mode ☁️";
-    authBtn.textContent="Logout";
+  if(isSignup){
+    const {error}=await supabase.auth.signUp({email,password});
+    if(error) return alert(error.message);
+    alert("Check your email 💌");
   }else{
-    modeText.textContent="Guest mode";
-    authBtn.textContent="Login";
+    const {error}=await supabase.auth.signInWithPassword({email,password});
+    if(error) return alert(error.message);
+    closeLogin();
   }
 }
 
-authBtn.onclick = async ()=>{
-  if(user){
-    await supabase.auth.signOut();
-  }else{
-    const email = prompt("Enter email to login / signup:");
-    if(!email) return;
-    await supabase.auth.signInWithOtp({ email });
-    alert("Check your email ✨");
-  }
-};
+async function loginGoogle(){
+  await supabase.auth.signInWithOAuth({
+    provider:"google",
+    options:{redirectTo:location.href}
+  });
+}
 
-/* ========== CHAT RENDER ========== */
-function render(text,sender){
+function continueGuest(){
+  isGuest=true;
+  closeLogin();
+}
+
+/* SESSION */
+(async()=>{
+  const {data:{session}}=await supabase.auth.getSession();
+  if(session) closeLogin();
+})();
+
+function closeLogin(){
+  document.getElementById("loginOverlay").style.display="none";
+}
+
+/* ================= CHAT ================= */
+const msgs=document.getElementById("messages");
+const input=document.getElementById("input");
+document.getElementById("send").onclick=sendMsg;
+
+function add(text,sender){
   const m=document.createElement("div");
   m.className="msg "+sender;
   m.textContent=text;
@@ -168,59 +324,28 @@ function render(text,sender){
   msgs.scrollTop=msgs.scrollHeight;
 }
 
-/* ========== LOAD CHATS ========== */
-async function loadChats(){
-  if(user){
-    const { data } = await supabase
-      .from("nyla_messages")
-      .select("*")
-      .order("created_at",{ascending:true});
-    data?.forEach(m=>render(m.text,m.sender));
-  }else{
-    const arr = JSON.parse(localStorage.getItem(LOCAL_KEY)||"[]");
-    arr.forEach(m=>render(m.text,m.sender));
-  }
-}
-
-/* ========== SEND ========== */
-send.onclick = sendMsg;
-input.onkeydown = e=>{
-  if(e.key==="Enter"){e.preventDefault();sendMsg();}
-};
-
 async function sendMsg(){
   const text=input.value.trim();
   if(!text) return;
   input.value="";
-  render(text,"user");
+  add(text,"user");
 
-  if(user){
-    await supabase.from("nyla_messages")
-      .insert({ user_id:user.id, sender:"user", text });
-  }else{
-    const arr=JSON.parse(localStorage.getItem(LOCAL_KEY)||"[]");
-    arr.push({ sender:"user", text });
-    localStorage.setItem(LOCAL_KEY,JSON.stringify(arr));
-  }
-
-  const r=await fetch(API,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ message:text })
-  });
-  const d=await r.json();
-
-  render(d.reply,"nyla");
-
-  if(user){
-    await supabase.from("nyla_messages")
-      .insert({ user_id:user.id, sender:"nyla", text:d.reply, emotion:d.emotion });
-  }else{
-    const arr=JSON.parse(localStorage.getItem(LOCAL_KEY)||"[]");
-    arr.push({ sender:"nyla", text:d.reply });
-    localStorage.setItem(LOCAL_KEY,JSON.stringify(arr));
+  try{
+    const r=await fetch(API,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:text})
+    });
+    const d=await r.json();
+    add(d.reply,"nyla");
+  }catch{
+    add("I'm recharging rn 🔋","nyla");
   }
 }
+
+/* SHORTCUTS */
+const emailInput=document.getElementById("email");
+const passwordInput=document.getElementById("password");
 </script>
 
 </body>
