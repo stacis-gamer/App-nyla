@@ -47,11 +47,7 @@ body{
   justify-content:space-between;
   align-items:center;
 }
-.header-left{
-  display:flex;
-  gap:.75rem;
-  align-items:center;
-}
+.header-left{display:flex;gap:.75rem;align-items:center}
 .avatar{
   width:42px;height:42px;border-radius:50%;
   background:linear-gradient(135deg,var(--u1),var(--u2));
@@ -91,20 +87,6 @@ body{
   margin-top:4px;
 }
 
-/* TYPING */
-.typing{display:flex;gap:6px}
-.dot{
-  width:8px;height:8px;border-radius:50%;
-  background:var(--u2);
-  animation:bounce 1.4s infinite;
-}
-.dot:nth-child(2){animation-delay:.2s}
-.dot:nth-child(3){animation-delay:.4s}
-@keyframes bounce{
-  0%,80%,100%{opacity:.4}
-  40%{opacity:1;transform:translateY(-6px)}
-}
-
 /* INPUT */
 .input{
   display:flex;
@@ -112,7 +94,6 @@ body{
   padding:1rem;
   background:var(--header);
   border-top:1px solid var(--border);
-  z-index:3;
 }
 .input input{
   flex:1;
@@ -120,25 +101,21 @@ body{
   border:none;
   outline:none;
   color:var(--text);
-  font-size:1rem;
 }
 .input button{
   width:40px;height:40px;border-radius:50%;
   border:none;
   background:linear-gradient(135deg,var(--u1),var(--u2));
   color:#fff;
-  font-size:1.1rem;
 }
 
-/* NYLA PNG */
+/* NYLA */
 #nyla{
   position:absolute;
   right:-10px;
   bottom:90px;
   width:260px;
   pointer-events:none;
-  z-index:1;
-  transition:opacity .25s ease;
 }
 
 /* SETTINGS */
@@ -187,11 +164,10 @@ body{
   </div>
 
   <div class="messages" id="messages"></div>
-
-  <img id="nyla" src="assets/nyla/idle.png" alt="Nyla">
+  <img id="nyla" src="assets/nyla/idle.png">
 
   <div class="input">
-    <input id="input" placeholder="Message Nyla…" autocomplete="off">
+    <input id="input" placeholder="Message Nyla…">
     <button id="send">➤</button>
   </div>
 </div>
@@ -201,136 +177,99 @@ body{
   <a href="https://www.instagram.com/blub_fish.stacis?igsh=bmY1bnh6dGJxYnYx" target="_blank">
     Developer’s Instagram
   </a>
-  <button onclick="alert('Open DevTools → Application → Local Storage')">
-    View Local Storage
-  </button>
   <button onclick="clearChats()" style="color:#f87171">
     Clear Chats
   </button>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* ================= SUPABASE ================= */
+const supabase = window.supabase.createClient(
+  "https://sjwwkmjfehsondqbmouu.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InNqd3drbWpmZWhzb25kcWJtb3V1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU2MzE5MzksImV4cCI6MjA4MTIwNzkzOX0.cgooAxM2BXisi20RH-cKqardpt432dPAs1EI_mVqV0U"
+);
+
+/* API */
 const API = "https://nyla-api.onrender.com/nyla";
-const STORAGE_KEY = "nyla_chats";
-let isRestoring = false; // 🔑 FIX
 
-const emotionMap = {
-  happy:"assets/nyla/happy.png",
-  sad:"assets/nyla/sad.png",
-  angry:"assets/nyla/angry.png",
-  blush:"assets/nyla/blush.png",
-  shocked:"assets/nyla/shocked.png",
-  smug:"assets/nyla/smug.png",
-  sleepy:"assets/nyla/sleepy.png",
-  excited:"assets/nyla/excited.png",
-  gamer:"assets/nyla/gamer.png",
-  idle:"assets/nyla/idle.png"
-};
-
-const nylaImg = document.getElementById("nyla");
+/* ELEMENTS */
 const msgs = document.getElementById("messages");
 const input = document.getElementById("input");
 const send = document.getElementById("send");
 const settings = document.getElementById("settings");
-let typingBubble = null;
 
-document.getElementById("openSettings").onclick = () =>
-  settings.classList.toggle("open");
+/* SETTINGS */
+document.getElementById("openSettings").onclick =
+  () => settings.classList.toggle("open");
 
-send.onclick = sendMsg;
-input.onkeydown = e => {
-  if(e.key==="Enter" && !e.isComposing){
-    e.preventDefault();
-    sendMsg();
-  }
-};
+/* LOAD CLOUD CHATS */
+loadChats();
 
-loadMemory();
-
-/* UI */
-function add(text,sender,emo){
+/* RENDER */
+function render(text,sender,emotion){
   const m=document.createElement("div");
   m.className="msg "+sender;
   m.textContent=text;
   msgs.appendChild(m);
 
-  if(emo){
-    const em=document.createElement("div");
-    em.className="emotion";
-    em.textContent=emo;
-    m.appendChild(em);
-    setEmotion(emo);
-  }
-
-  if(!isRestoring){
-    saveMemory({sender,text,emotion:emo||null});
+  if(emotion){
+    const e=document.createElement("div");
+    e.className="emotion";
+    e.textContent=emotion;
+    m.appendChild(e);
   }
 
   msgs.scrollTop=msgs.scrollHeight;
 }
 
-function showTyping(){
-  typingBubble=document.createElement("div");
-  typingBubble.className="msg nyla";
-  typingBubble.innerHTML=`
-    <div class="typing">
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <div class="dot"></div>
-    </div>`;
-  msgs.appendChild(typingBubble);
-}
-
-function hideTyping(){
-  typingBubble?.remove();
-  typingBubble=null;
-}
-
-function setEmotion(e){
-  nylaImg.src=emotionMap[e]||emotionMap.idle;
-  setTimeout(()=>nylaImg.src=emotionMap.idle,4000);
-}
+/* SEND */
+send.onclick = sendMsg;
+input.onkeydown = e=>{
+  if(e.key==="Enter"){
+    e.preventDefault();
+    sendMsg();
+  }
+};
 
 async function sendMsg(){
   const text=input.value.trim();
   if(!text) return;
   input.value="";
-  add(text,"user");
-  showTyping();
+  render(text,"user");
+
+  await supabase.from("nyla_messages")
+    .insert({ sender:"user", text });
 
   try{
     const r=await fetch(API,{
       method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:text})
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ message:text })
     });
     const d=await r.json();
-    hideTyping();
-    add(d.reply,"nyla",d.emotion);
+    render(d.reply,"nyla",d.emotion);
+    await supabase.from("nyla_messages")
+      .insert({ sender:"nyla", text:d.reply, emotion:d.emotion });
   }catch{
-    hideTyping();
-    add("I’m recharging rn 🔋","nyla","sleepy");
+    render("I’m recharging rn 🔋","nyla","sleepy");
   }
 }
 
-/* MEMORY */
-function saveMemory(msg){
-  const arr=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
-  arr.push(msg);
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(arr));
+/* LOAD */
+async function loadChats(){
+  const { data } = await supabase
+    .from("nyla_messages")
+    .select("*")
+    .order("created_at",{ascending:true});
+
+  data?.forEach(m=>render(m.text,m.sender,m.emotion));
 }
 
-function loadMemory(){
-  const arr=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
-  isRestoring=true;
-  arr.forEach(m=>add(m.text,m.sender,m.emotion));
-  isRestoring=false;
-}
-
-function clearChats(){
-  localStorage.removeItem(STORAGE_KEY);
+/* CLEAR */
+async function clearChats(){
+  await supabase.from("nyla_messages").delete().neq("id","");
   msgs.innerHTML="";
-  nylaImg.src=emotionMap.idle;
   settings.classList.remove("open");
 }
 </script>
