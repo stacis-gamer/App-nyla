@@ -93,17 +93,15 @@ body{
   to{opacity:1;transform:none}
 }
 
-/* TYPING */
+/* TYPING INDICATOR */
 .typing{
   display:flex;
   gap:6px;
-  padding:.6rem .8rem;
-  background:var(--bubble);
-  border-radius:16px;
-  width:fit-content;
 }
 .dot{
-  width:8px;height:8px;border-radius:50%;
+  width:8px;
+  height:8px;
+  border-radius:50%;
   background:var(--u2);
   animation:bounce 1.4s infinite;
 }
@@ -132,7 +130,9 @@ body{
   font-size:1rem;
 }
 .input button{
-  width:40px;height:40px;border-radius:50%;
+  width:40px;
+  height:40px;
+  border-radius:50%;
   border:none;
   background:linear-gradient(135deg,var(--u1),var(--u2));
   color:#fff;
@@ -142,14 +142,12 @@ body{
 /* NYLA PNG */
 #nyla{
   position:fixed;
-  right:0;
-  bottom:0;
-  width:320px;
-  max-height:80vh;
+  right:10px;
+  bottom:110px; /* 👈 ABOVE INPUT BAR */
+  width:300px;
+  max-height:70vh;
   pointer-events:none;
-  z-index:10; /* IMPORTANT */
-  display:block;
-  opacity:1;
+  z-index:1;
   transition:opacity .25s ease;
 }
 </style>
@@ -178,7 +176,7 @@ body{
 <img id="nyla" src="assets/nyla/idle.png" alt="Nyla">
 
 <script>
-/* ===== CONFIG ===== */
+/* ================= CONFIG ================= */
 const API = "https://nyla-api.onrender.com/nyla";
 
 /* emotion → png */
@@ -205,7 +203,7 @@ let typingBubble = null;
 send.onclick = sendMsg;
 input.onkeydown = e => e.key === "Enter" && sendMsg();
 
-/* ===== UI HELPERS ===== */
+/* ================= UI HELPERS ================= */
 function add(text, cls, emo){
   const m = document.createElement("div");
   m.className = "msg " + cls;
@@ -226,18 +224,19 @@ function add(text, cls, emo){
 function showTyping(){
   typingBubble = document.createElement("div");
   typingBubble.className = "msg nyla";
-  typingBubble.innerHTML =
-    '<div class="typing">' +
-    '<div class="dot"></div>' +
-    '<div class="dot"></div>' +
-    '<div class="dot"></div>' +
-    '</div>';
+  typingBubble.innerHTML = `
+    <div class="typing">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>
+  `;
   msgs.appendChild(typingBubble);
   msgs.scrollTop = msgs.scrollHeight;
 }
 
 function hideTyping(){
-  if(typingBubble) typingBubble.remove();
+  typingBubble?.remove();
   typingBubble = null;
 }
 
@@ -254,7 +253,7 @@ function setEmotion(emo){
   },4000);
 }
 
-/* ===== SEND ===== */
+/* ================= SEND ================= */
 async function sendMsg(){
   if(!input.value) return;
   const text = input.value;
