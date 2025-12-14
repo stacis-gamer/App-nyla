@@ -162,11 +162,10 @@ body{
   </div>
 </div>
 
-<!-- CANVAS -->
 <canvas id="nyla-canvas"></canvas>
 
 <!-- REQUIRED LIBS -->
-<script src="./live2dcubismcore.min.js"></script>
+<script src="https://stacis-gamer.github.io/App-nyla/live2dcubismcore.min.js"></script>
 <script src="https://unpkg.com/pixi.js@7.3.2/dist/pixi.min.js"></script>
 <script src="https://unpkg.com/pixi-live2d-display@0.4.0/dist/index.min.js"></script>
 
@@ -221,38 +220,37 @@ async function sendMsg(){
     add(d.reply,"nyla",d.emotion);
   }catch{
     hideTyping();
-    add("I'm recharging rn 🔋 try again soon","nyla","sleepy");
+    add("I'm recharging rn 🔋","nyla","sleepy");
   }
 }
 
-/* ===== LIVE2D (STABLE) ===== */
+/* ===== LIVE2D (FIXED) ===== */
 (async()=>{
   try{
-    const canvas=document.getElementById("nyla-canvas");
-    const app=new PIXI.Application({
-      width:360,
-      height:560,
-      backgroundAlpha:0,
-      resolution:window.devicePixelRatio||1
+    const app = new PIXI.Application({
+      view: document.getElementById("nyla-canvas"),
+      width: 360,
+      height: 560,
+      backgroundAlpha: 0,
+      resolution: window.devicePixelRatio || 1,
+      autoDensity: true
     });
 
-    canvas.replaceWith(app.view);
-    app.view.id="nyla-canvas";
-
-    const model=await PIXI.live2d.Live2DModel.from(
-      "1113_v2/Z.model3.json"
+    const model = await PIXI.live2d.Live2DModel.from(
+      "https://stacis-gamer.github.io/App-nyla/1113_v2/Z.model3.json"
     );
 
-    model.anchor.set(0.5,1);
-    model.scale.set(0.45);
-    model.x=app.renderer.width/2;
-    model.y=app.renderer.height;
+    model.anchor.set(0.5, 1);
+    model.scale.set(0.35);
+    model.x = app.renderer.width / 2;
+    model.y = app.renderer.height + 20;
 
     app.stage.addChild(model);
-    console.log("💜 Nyla LIVE2D loaded");
+
+    console.log("💜 Nyla Live2D rendered");
 
   }catch(e){
-    console.error("Live2D error:",e);
+    console.error("❌ Live2D error:", e);
   }
 })();
 </script>
