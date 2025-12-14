@@ -16,7 +16,6 @@
   --u2:#a78bfa;
   --text:#e4e4e7;
 }
-
 *{margin:0;padding:0;box-sizing:border-box}
 body{
   background:var(--bg);
@@ -123,24 +122,15 @@ body{
   color:#fff;
 }
 
-/* NYLA */
-#nyla{
-  position:absolute;
-  right:-10px;
-  bottom:90px;
-  width:260px;
-  pointer-events:none;
-}
-
-/* LOGIN */
-.login-overlay{
+/* LOGIN OVERLAY */
+.login{
   position:fixed;
   inset:0;
   background:rgba(0,0,0,.65);
   display:flex;
   align-items:center;
   justify-content:center;
-  z-index:20;
+  z-index:10;
 }
 .login-box{
   background:var(--panel);
@@ -170,9 +160,7 @@ body{
   color:#fff;
   cursor:pointer;
 }
-.login-box .alt{
-  background:var(--bubble);
-}
+.login-box .alt{background:var(--bubble)}
 </style>
 </head>
 
@@ -190,7 +178,6 @@ body{
   </div>
 
   <div class="messages" id="messages"></div>
-  <img id="nyla" src="assets/nyla/idle.png">
 
   <div class="input">
     <input id="input" placeholder="Message Nyla…">
@@ -199,7 +186,7 @@ body{
 </div>
 
 <!-- LOGIN -->
-<div class="login-overlay" id="login">
+<div class="login" id="login">
   <div class="login-box">
     <h2>Welcome 💜</h2>
     <input id="email" placeholder="Email">
@@ -213,7 +200,7 @@ body{
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ================= SUPABASE ================= */
+/* ================= CONFIG ================= */
 const supabase = window.supabase.createClient(
   "https://zdgsvguebwfecnlboxiq.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZ3N2Z3VlYndmZWNubGJveGlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDgyNjMsImV4cCI6MjA4MTI4NDI2M30.SqAzHVqbA5YTgkhpxhEFlBhbLBNumVi4_lnSLoBuKR0"
@@ -228,11 +215,11 @@ const send = document.getElementById("send");
 const login = document.getElementById("login");
 
 let currentUser = null;
+let chatsLoaded = false;
 let typingBubble = null;
-let isRestoring = false;
 
 /* ================= AUTH ================= */
-async function restoreSession(){
+async function init(){
   const { data } = await supabase.auth.getSession();
   currentUser = data.session?.user || null;
 
@@ -241,16 +228,16 @@ async function restoreSession(){
     loadCloudChats();
   }
 }
+init();
 
-supabase.auth.onAuthStateChange((_e, session)=>{
-  currentUser = session?.user || null;
-  if(currentUser){
-    login.style.display="none";
+supabase.auth.onAuthStateChange((_, session)=>{
+  if(session?.user){
+    currentUser = session.user;
+    login.style.display = "none";
+    chatsLoaded = false;
     loadCloudChats();
   }
 });
-
-restoreSession();
 
 async function signIn(){
   await supabase.auth.signInWithPassword({
@@ -278,14 +265,12 @@ function render(text,sender,emotion){
   m.className="msg "+sender;
   m.textContent=text;
   msgs.appendChild(m);
-
   if(emotion){
     const e=document.createElement("div");
     e.className="emotion";
     e.textContent=emotion;
     m.appendChild(e);
   }
-
   msgs.scrollTop=msgs.scrollHeight;
 }
 
@@ -299,14 +284,14 @@ function showTyping(){
       <div class="dot"></div>
     </div>`;
   msgs.appendChild(typingBubble);
+  msgs.scrollTop=msgs.scrollHeight;
 }
-
 function hideTyping(){
   typingBubble?.remove();
   typingBubble=null;
 }
 
-/* ================= SEND ================= */
+/* ================= CHAT ================= */
 send.onclick=sendMsg;
 input.onkeydown=e=>{
   if(e.key==="Enter"){e.preventDefault();sendMsg();}
@@ -338,7 +323,12 @@ async function sendMsg(){
 
     if(currentUser){
       await supabase.from("nyla_messages")
-        .insert({ user_id:currentUser.id, sender:"nyla", text:d.reply, emotion:d.emotion });
+        .insert({
+          user_id:currentUser.id,
+          sender:"nyla",
+          text:d.reply,
+          emotion:d.emotion
+        });
     }else{
       saveLocal({sender:"nyla",text:d.reply,emotion:d.emotion});
     }
@@ -350,11 +340,14 @@ async function sendMsg(){
 
 /* ================= LOAD ================= */
 async function loadCloudChats(){
+  if(chatsLoaded) return;
+  chatsLoaded = true;
+
   msgs.innerHTML="";
   const { data } = await supabase
     .from("nyla_messages")
     .select("*")
-    .eq("user_id",currentUser.id)
+    .eq("user_id", currentUser.id)
     .order("created_at",{ascending:true});
 
   data?.forEach(m=>render(m.text,m.sender,m.emotion));
