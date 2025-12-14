@@ -16,9 +16,7 @@
   --u2:#a78bfa;
   --text:#e4e4e7;
 }
-
 *{margin:0;padding:0;box-sizing:border-box}
-
 body{
   background:var(--bg);
   color:var(--text);
@@ -61,10 +59,7 @@ body{
   font-weight:700;color:#fff;
 }
 .status{font-size:.75rem;color:var(--u2)}
-.settings-btn{
-  font-size:1.3rem;
-  cursor:pointer;
-}
+.settings-btn{font-size:1.3rem;cursor:pointer}
 
 /* MESSAGES */
 .messages{
@@ -117,7 +112,6 @@ body{
   padding:1rem;
   background:var(--header);
   border-top:1px solid var(--border);
-  position:relative;
   z-index:3;
 }
 .input input{
@@ -147,7 +141,7 @@ body{
   transition:opacity .25s ease;
 }
 
-/* SETTINGS PANEL */
+/* SETTINGS */
 .settings{
   position:fixed;
   top:0;
@@ -160,13 +154,9 @@ body{
   transition:right .3s ease;
   z-index:10;
 }
-.settings.open{ right:0 }
-.settings h3{
-  margin-bottom:1rem;
-  color:var(--u2);
-}
-.settings a,
-.settings button{
+.settings.open{right:0}
+.settings h3{color:var(--u2);margin-bottom:1rem}
+.settings a,.settings button{
   display:block;
   width:100%;
   margin-bottom:.75rem;
@@ -206,7 +196,6 @@ body{
   </div>
 </div>
 
-<!-- SETTINGS -->
 <div class="settings" id="settings">
   <h3>Settings</h3>
   <a href="https://www.instagram.com/blub_fish.stacis?igsh=bmY1bnh6dGJxYnYx" target="_blank">
@@ -221,9 +210,9 @@ body{
 </div>
 
 <script>
-/* CONFIG */
 const API = "https://nyla-api.onrender.com/nyla";
 const STORAGE_KEY = "nyla_chats";
+let isRestoring = false; // 🔑 FIX
 
 const emotionMap = {
   happy:"assets/nyla/happy.png",
@@ -243,85 +232,79 @@ const msgs = document.getElementById("messages");
 const input = document.getElementById("input");
 const send = document.getElementById("send");
 const settings = document.getElementById("settings");
-
 let typingBubble = null;
 
-/* SETTINGS */
 document.getElementById("openSettings").onclick = () =>
   settings.classList.toggle("open");
 
-/* EVENTS */
-send.addEventListener("click", sendMsg);
-input.addEventListener("keydown", e => {
-  if (e.key === "Enter" && !e.isComposing) {
+send.onclick = sendMsg;
+input.onkeydown = e => {
+  if(e.key==="Enter" && !e.isComposing){
     e.preventDefault();
     sendMsg();
   }
-});
+};
 
-/* MEMORY LOAD */
 loadMemory();
 
-/* UI HELPERS */
-function add(text, sender, emo){
-  const m = document.createElement("div");
-  m.className = "msg " + sender;
-  m.textContent = text;
+/* UI */
+function add(text,sender,emo){
+  const m=document.createElement("div");
+  m.className="msg "+sender;
+  m.textContent=text;
   msgs.appendChild(m);
 
   if(emo){
-    const em = document.createElement("div");
-    em.className = "emotion";
-    em.textContent = emo;
+    const em=document.createElement("div");
+    em.className="emotion";
+    em.textContent=emo;
     m.appendChild(em);
     setEmotion(emo);
   }
 
-  saveMemory({ sender, text, emotion: emo || null });
-  msgs.scrollTop = msgs.scrollHeight;
+  if(!isRestoring){
+    saveMemory({sender,text,emotion:emo||null});
+  }
+
+  msgs.scrollTop=msgs.scrollHeight;
 }
 
 function showTyping(){
-  typingBubble = document.createElement("div");
-  typingBubble.className = "msg nyla";
-  typingBubble.innerHTML = `
+  typingBubble=document.createElement("div");
+  typingBubble.className="msg nyla";
+  typingBubble.innerHTML=`
     <div class="typing">
       <div class="dot"></div>
       <div class="dot"></div>
       <div class="dot"></div>
     </div>`;
   msgs.appendChild(typingBubble);
-  msgs.scrollTop = msgs.scrollHeight;
 }
 
 function hideTyping(){
-  if(typingBubble){
-    typingBubble.remove();
-    typingBubble = null;
-  }
+  typingBubble?.remove();
+  typingBubble=null;
 }
 
-function setEmotion(emo){
-  nylaImg.src = emotionMap[emo] || emotionMap.idle;
-  setTimeout(()=>nylaImg.src = emotionMap.idle,4000);
+function setEmotion(e){
+  nylaImg.src=emotionMap[e]||emotionMap.idle;
+  setTimeout(()=>nylaImg.src=emotionMap.idle,4000);
 }
 
-/* SEND */
 async function sendMsg(){
-  const text = input.value.trim();
+  const text=input.value.trim();
   if(!text) return;
-
-  input.value = "";
+  input.value="";
   add(text,"user");
   showTyping();
 
   try{
-    const r = await fetch(API,{
+    const r=await fetch(API,{
       method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ message:text })
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({message:text})
     });
-    const d = await r.json();
+    const d=await r.json();
     hideTyping();
     add(d.reply,"nyla",d.emotion);
   }catch{
@@ -332,20 +315,22 @@ async function sendMsg(){
 
 /* MEMORY */
 function saveMemory(msg){
-  const arr = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
+  const arr=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
   arr.push(msg);
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(arr));
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(arr));
 }
 
 function loadMemory(){
-  const arr = JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]");
-  arr.forEach(m => add(m.text, m.sender, m.emotion));
+  const arr=JSON.parse(localStorage.getItem(STORAGE_KEY)||"[]");
+  isRestoring=true;
+  arr.forEach(m=>add(m.text,m.sender,m.emotion));
+  isRestoring=false;
 }
 
 function clearChats(){
   localStorage.removeItem(STORAGE_KEY);
-  msgs.innerHTML = "";
-  nylaImg.src = emotionMap.idle;
+  msgs.innerHTML="";
+  nylaImg.src=emotionMap.idle;
   settings.classList.remove("open");
 }
 </script>
