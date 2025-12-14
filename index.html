@@ -25,7 +25,6 @@ body{
   font-family:system-ui,sans-serif;
 }
 
-/* APP */
 .app{
   max-width:720px;
   margin:0 auto;
@@ -58,7 +57,7 @@ body{
 .status{font-size:.75rem;color:var(--u2)}
 .settings-btn{font-size:1.3rem;cursor:pointer}
 
-/* MESSAGES */
+/* CHAT */
 .messages{
   flex:1;
   overflow-y:auto;
@@ -132,10 +131,11 @@ body{
   width:260px;
   pointer-events:none;
   z-index:2;
+  opacity:1;
   transition:opacity .25s ease;
 }
 
-/* SETTINGS OVERLAY */
+/* SETTINGS */
 .settings-overlay{
   position:fixed;
   inset:0;
@@ -149,8 +149,6 @@ body{
   opacity:1;
   pointer-events:auto;
 }
-
-/* SETTINGS PANEL */
 .settings{
   position:fixed;
   top:0;
@@ -165,18 +163,6 @@ body{
 }
 .settings.open{ right:0 }
 
-.settings h3{
-  color:var(--u2);
-  margin-bottom:1rem;
-}
-
-.settings details{
-  margin-bottom:1rem;
-}
-.settings summary{
-  cursor:pointer;
-  margin-bottom:.5rem;
-}
 .settings a,
 .settings button{
   display:block;
@@ -187,9 +173,8 @@ body{
   color:var(--text);
   border:none;
   border-radius:8px;
-  text-align:left;
-  cursor:pointer;
   text-decoration:none;
+  cursor:pointer;
 }
 
 .settings-footer{
@@ -220,22 +205,19 @@ body{
   width:90%;
   max-width:340px;
 }
-.login-box h2{margin-bottom:1rem}
-.login-box input{
-  width:100%;
-  padding:.6rem;
-  margin-bottom:.75rem;
-  background:var(--bubble);
-  border:none;
-  border-radius:8px;
-  color:var(--text);
-}
+.login-box input,
 .login-box button{
   width:100%;
   padding:.6rem;
-  margin-bottom:.5rem;
+  margin-bottom:.6rem;
   border:none;
   border-radius:8px;
+}
+.login-box input{
+  background:var(--bubble);
+  color:var(--text);
+}
+.login-box button{
   background:linear-gradient(135deg,var(--u1),var(--u2));
   color:#fff;
 }
@@ -259,7 +241,6 @@ body{
 
   <div class="messages" id="messages"></div>
 
-  <!-- NYLA -->
   <img id="nyla" src="assets/nyla/idle.png" alt="Nyla">
 
   <div class="input">
@@ -268,62 +249,70 @@ body{
   </div>
 </div>
 
-<!-- SETTINGS -->
 <div class="settings-overlay" id="overlay"></div>
 <div class="settings" id="settings">
-  <h3>Settings</h3>
-
-  <details>
-    <summary>Developer Contacts</summary>
-    <a href="https://www.instagram.com/blub_fish.stacis?igsh=bmY1bnh6dGJxYnYx" target="_blank">Instagram</a>
-    <a href="https://discord.gg/2WMhbdX4" target="_blank">Discord</a>
-    <a href="https://www.facebook.com/share/17jwNsoEfz/" target="_blank">Facebook</a>
-  </details>
-
-  <button onclick="deleteMemory()" style="color:#f87171">Delete Memory</button>
+  <a href="https://www.instagram.com/blub_fish.stacis?igsh=bmY1bnh6dGJxYnYx" target="_blank">Instagram</a>
+  <a href="https://discord.gg/2WMhbdX4" target="_blank">Discord</a>
+  <a href="https://www.facebook.com/share/17jwNsoEfz/" target="_blank">Facebook</a>
   <button onclick="logout()">Logout</button>
-
   <div class="settings-footer">
     Nyla AI • Powered by Groq<br>
     Made by <b>Stacis Studios</b>
   </div>
 </div>
 
-<!-- LOGIN -->
 <div class="login" id="login">
   <div class="login-box">
-    <h2>Welcome 💜</h2>
     <input id="email" placeholder="Email">
     <input id="password" type="password" placeholder="Password">
     <button onclick="signIn()">Sign In</button>
-    <button class="alt" onclick="signUp()">Sign Up</button>
     <button class="alt" onclick="google()">Continue with Google</button>
-    <button class="alt" onclick="guest()">Continue as Guest</button>
+    <button class="alt" onclick="guest()">Guest</button>
   </div>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+// OAuth HASH FIX
+if (location.hash.includes("access_token")) {
+  history.replaceState(null, "", location.pathname);
+}
+
 const supabase = window.supabase.createClient(
   "https://zdgsvguebwfecnlboxiq.supabase.co",
-  "YOUR_ANON_KEY"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZ3N2Z3VlYndmZWNubGJveGlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDgyNjMsImV4cCI6MjA4MTI4NDI2M30.SqAzHVqbA5YTgkhpxhEFlBhbLBNumVi4_lnSLoBuKR0"
 );
 
-const API = "https://nyla-api.onrender.com/nyla";
-
-const msgs=document.getElementById("messages");
-const input=document.getElementById("input");
-const send=document.getElementById("send");
-const login=document.getElementById("login");
-const nylaImg=document.getElementById("nyla");
-
-const settings=document.getElementById("settings");
-const overlay=document.getElementById("overlay");
+const API="https://nyla-api.onrender.com/nyla";
 
 let userId="guest";
-let typingBubble=null;
+const login=document.getElementById("login");
 
-/* SETTINGS */
+(async ()=>{
+  const { data } = await supabase.auth.getSession();
+  if(data.session){
+    userId=data.session.user.id;
+    login.style.display="none";
+  }
+})();
+
+async function google(){
+  await supabase.auth.signInWithOAuth({
+    provider:"google",
+    options:{ redirectTo:"https://stacis-gamer.github.io/App-nyla/" }
+  });
+}
+async function signIn(){
+  await supabase.auth.signInWithPassword({ email:email.value,password:password.value });
+}
+function guest(){ login.style.display="none"; }
+
+async function logout(){
+  await supabase.auth.signOut();
+  location.reload();
+}
+
+// SETTINGS
 openSettings.onclick=()=>{
   settings.classList.add("open");
   overlay.classList.add("open");
@@ -332,90 +321,6 @@ overlay.onclick=()=>{
   settings.classList.remove("open");
   overlay.classList.remove("open");
 };
-
-/* AUTH */
-async function init(){
-  const { data } = await supabase.auth.getSession();
-  if(data.session?.user){
-    userId=data.session.user.id;
-    login.style.display="none";
-  }
-}
-init();
-
-async function signIn(){ await supabase.auth.signInWithPassword({ email:email.value,password:password.value }); }
-async function signUp(){ await supabase.auth.signUp({ email:email.value,password:password.value }); }
-async function google(){ await supabase.auth.signInWithOAuth({ provider:"google" }); }
-function guest(){ login.style.display="none"; }
-
-/* CHAT */
-send.onclick=sendMsg;
-input.onkeydown=e=>{ if(e.key==="Enter"){e.preventDefault();sendMsg();} };
-
-function showTyping(){
-  typingBubble=document.createElement("div");
-  typingBubble.className="msg nyla";
-  typingBubble.innerHTML=`<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
-  msgs.appendChild(typingBubble);
-}
-function hideTyping(){ typingBubble?.remove(); typingBubble=null; }
-
-function render(text,sender,emotion){
-  const m=document.createElement("div");
-  m.className="msg "+sender;
-  m.textContent=text;
-  msgs.appendChild(m);
-  if(emotion){
-    const e=document.createElement("div");
-    e.className="emotion";
-    e.textContent=emotion;
-    m.appendChild(e);
-    setEmotion(emotion);
-  }
-  msgs.scrollTop=msgs.scrollHeight;
-}
-
-const emotionMap={
-  happy:"happy",sad:"sad",angry:"angry",blush:"blush",
-  shocked:"shocked",smug:"smug",sleepy:"sleepy",
-  excited:"excited",gamer:"gamer",idle:"idle"
-};
-function setEmotion(e){
-  nylaImg.src=`assets/nyla/${emotionMap[e]||"idle"}.png`;
-  setTimeout(()=>nylaImg.src="assets/nyla/idle.png",4000);
-}
-
-async function sendMsg(){
-  const text=input.value.trim();
-  if(!text) return;
-  input.value="";
-  render(text,"user");
-  showTyping();
-
-  try{
-    const r=await fetch(API,{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ message:text,userId })
-    });
-    const d=await r.json();
-    hideTyping();
-    render(d.reply,"nyla",d.emotion);
-  }catch{
-    hideTyping();
-    render("I’m recharging 🔋","nyla","sleepy");
-  }
-}
-
-/* ACTIONS */
-async function deleteMemory(){
-  await fetch(API+"/forget-all",{ method:"POST",headers:{ "Content-Type":"application/json" },body:JSON.stringify({ userId }) });
-  alert("Memory cleared 💭");
-}
-async function logout(){
-  await supabase.auth.signOut();
-  location.reload();
-}
 </script>
 
 </body>
