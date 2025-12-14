@@ -33,7 +33,10 @@ body{
   border-left:1px solid var(--border);
   border-right:1px solid var(--border);
   position:relative;
+  overflow:hidden;
 }
+
+/* HEADER */
 .header{
   padding:1rem;
   background:var(--header);
@@ -49,7 +52,9 @@ body{
   display:flex;align-items:center;justify-content:center;
   font-weight:700;color:#fff;
 }
-.settings-btn{cursor:pointer}
+.settings-btn{cursor:pointer;font-size:1.3rem}
+
+/* CHAT */
 .messages{
   flex:1;
   overflow-y:auto;
@@ -72,16 +77,37 @@ body{
   align-self:flex-start;
   background:var(--bubble);
 }
+
+/* TYPING INDICATOR */
+.typing{
+  display:flex;
+  gap:6px;
+}
+.dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--u2);
+  animation:bounce 1.4s infinite;
+}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{
+  0%,80%,100%{opacity:.4}
+  40%{opacity:1;transform:translateY(-6px)}
+}
+
+/* INPUT */
 .input{
   display:flex;
   gap:.5rem;
   padding:1rem;
   background:var(--header);
+  border-top:1px solid var(--border);
 }
 .input input{
   flex:1;
   background:none;
   border:none;
+  outline:none;
   color:var(--text);
 }
 .input button{
@@ -90,6 +116,18 @@ body{
   background:linear-gradient(135deg,var(--u1),var(--u2));
   color:#fff;
 }
+
+/* NYLA MODEL */
+#nyla{
+  position:absolute;
+  right:-10px;
+  bottom:100px;
+  width:260px;
+  pointer-events:none;
+  z-index:5;
+}
+
+/* SETTINGS */
 .settings-overlay{
   position:fixed;
   inset:0;
@@ -97,52 +135,48 @@ body{
   opacity:0;
   pointer-events:none;
   transition:.3s;
+  z-index:9;
 }
-.settings-overlay.open{
-  opacity:1;
-  pointer-events:auto;
-}
+.settings-overlay.open{opacity:1;pointer-events:auto}
 .settings{
   position:fixed;
-  right:-280px;
   top:0;
+  right:-280px;
   width:280px;
   height:100%;
   background:#14141d;
+  border-left:1px solid var(--border);
   padding:1rem;
   transition:.3s;
+  z-index:10;
 }
-.settings.open{ right:0 }
-.settings button, .settings a{
-  width:100%;
-  margin-bottom:.5rem;
-  padding:.6rem;
-  background:var(--bubble);
-  border:none;
-  color:var(--text);
-  border-radius:8px;
-  text-decoration:none;
-  cursor:pointer;
+.settings.open{right:0}
+.settings details{margin-bottom:1rem}
+.settings summary{cursor:pointer;margin-bottom:.5rem}
+.settings a,.settings button{
+  display:block;width:100%;margin-bottom:.5rem;padding:.6rem;
+  background:var(--bubble);border:none;color:var(--text);
+  border-radius:8px;cursor:pointer;text-decoration:none;
 }
+.settings-footer{
+  position:absolute;bottom:1rem;left:1rem;right:1rem;
+  font-size:.75rem;opacity:.6;text-align:center;
+}
+
+/* LOGIN */
 .login{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.6);
-  display:none;
-  justify-content:center;
-  align-items:center;
+  position:fixed;inset:0;background:rgba(0,0,0,.65);
+  display:none;align-items:center;justify-content:center;z-index:20;
 }
 .login-box{
-  background:var(--panel);
-  padding:1.5rem;
-  border-radius:16px;
-  width:300px;
+  background:var(--panel);padding:1.5rem;border-radius:16px;width:300px;
 }
-.login-box input, .login-box button{
-  width:100%;
-  padding:.6rem;
-  margin-bottom:.5rem;
+.login-box input,.login-box button{
+  width:100%;padding:.6rem;margin-bottom:.6rem;
 }
+.login-box input{background:var(--bubble);color:var(--text)}
+.login-box button{background:linear-gradient(135deg,var(--u1),var(--u2));color:#fff;border:none}
+.login-box .alt{background:var(--bubble)}
 </style>
 </head>
 
@@ -158,6 +192,7 @@ body{
   </div>
 
   <div class="messages" id="messages"></div>
+  <img id="nyla" src="assets/nyla/idle.png">
 
   <div class="input">
     <input id="input" placeholder="Message Nyla…">
@@ -167,13 +202,16 @@ body{
 
 <div class="settings-overlay" id="overlay"></div>
 <div class="settings" id="settings">
-  <a href="https://www.instagram.com/blub_fish.stacis?igsh=bmY1bnh6dGJxYnYx" target="_blank">Instagram</a>
-  <a href="https://discord.gg/2WMhbdX4" target="_blank">Discord</a>
-  <a href="https://www.facebook.com/share/17jwNsoEfz/" target="_blank">Facebook</a>
-
-  <button onclick="clearChat()" style="color:#fbbf24">Clear Chat</button>
+  <details>
+    <summary>Developer Contacts</summary>
+    <a href="https://www.instagram.com/blub_fish.stacis?igsh=bmY1bnh6dGJxYnYx" target="_blank">Instagram</a>
+    <a href="https://discord.gg/2WMhbdX4" target="_blank">Discord</a>
+    <a href="https://www.facebook.com/share/17jwNsoEfz/" target="_blank">Facebook</a>
+  </details>
+  <button onclick="clearChat()">Clear Chat</button>
   <button onclick="deleteMemory()" style="color:#f87171">Delete Memory</button>
   <button onclick="logout()">Logout</button>
+  <div class="settings-footer">Nyla AI • Powered by Groq<br>Made by <b>Stacis Studios</b></div>
 </div>
 
 <div class="login" id="login">
@@ -181,8 +219,8 @@ body{
     <input id="email" placeholder="Email">
     <input id="password" type="password">
     <button onclick="signIn()">Sign In</button>
-    <button onclick="google()">Google</button>
-    <button onclick="guest()">Guest</button>
+    <button class="alt" onclick="google()">Continue with Google</button>
+    <button class="alt" onclick="guest()">Guest</button>
   </div>
 </div>
 
@@ -199,13 +237,15 @@ const input=document.getElementById("input");
 const login=document.getElementById("login");
 
 let userId="guest";
+let chatsLoaded=false;
+let typingBubble=null;
 
 /* AUTH */
 function applySession(session){
   if(session?.user){
     userId=session.user.id;
     login.style.display="none";
-    loadChats();
+    if(!chatsLoaded){ loadChats(); chatsLoaded=true; }
   }else{
     userId="guest";
     login.style.display="flex";
@@ -214,7 +254,7 @@ function applySession(session){
 supabase.auth.onAuthStateChange((_e,s)=>applySession(s));
 supabase.auth.getSession().then(r=>applySession(r.data.session));
 
-/* CHAT */
+/* CHAT UI */
 function render(text,sender){
   const m=document.createElement("div");
   m.className="msg "+sender;
@@ -222,32 +262,40 @@ function render(text,sender){
   msgs.appendChild(m);
   msgs.scrollTop=msgs.scrollHeight;
 }
+function showTyping(){
+  if(typingBubble) return;
+  typingBubble=document.createElement("div");
+  typingBubble.className="msg nyla";
+  typingBubble.innerHTML=`<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  msgs.appendChild(typingBubble);
+}
+function hideTyping(){
+  typingBubble?.remove();
+  typingBubble=null;
+}
 
+/* LOAD CHAT */
 async function loadChats(){
   msgs.innerHTML="";
   if(userId==="guest") return;
-
   const { data } = await supabase
     .from("nyla_messages")
     .select("*")
     .eq("user_id",userId)
     .order("created_at",{ascending:true});
-
   data?.forEach(m=>render(m.text,m.sender));
 }
 
+/* SEND */
 send.onclick=async ()=>{
   const text=input.value.trim();
   if(!text) return;
   input.value="";
   render(text,"user");
+  showTyping();
 
   if(userId!=="guest"){
-    await supabase.from("nyla_messages").insert({
-      user_id:userId,
-      sender:"user",
-      text
-    });
+    await supabase.from("nyla_messages").insert({ user_id:userId,sender:"user",text });
   }
 
   const r=await fetch(API,{
@@ -256,65 +304,39 @@ send.onclick=async ()=>{
     body:JSON.stringify({ message:text,userId })
   });
   const d=await r.json();
+  hideTyping();
   render(d.reply,"nyla");
 
   if(userId!=="guest"){
-    await supabase.from("nyla_messages").insert({
-      user_id:userId,
-      sender:"nyla",
-      text:d.reply
-    });
+    await supabase.from("nyla_messages").insert({ user_id:userId,sender:"nyla",text:d.reply });
   }
 };
 
 /* ACTIONS */
 async function clearChat(){
-  if(userId==="guest"){
-    msgs.innerHTML="";
-    return;
-  }
+  if(userId==="guest"){ msgs.innerHTML=""; return; }
   await supabase.from("nyla_messages").delete().eq("user_id",userId);
   msgs.innerHTML="";
 }
-
 async function deleteMemory(){
-  await fetch(API+"/forget-all",{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ userId })
-  });
+  await fetch(API+"/forget-all",{method:"POST",headers:{ "Content-Type":"application/json" },body:JSON.stringify({ userId })});
   alert("Memory cleared 💭");
 }
-
 async function signIn(){
-  await supabase.auth.signInWithPassword({
-    email:email.value,
-    password:password.value
-  });
+  await supabase.auth.signInWithPassword({ email:email.value,password:password.value });
 }
 async function google(){
-  await supabase.auth.signInWithOAuth({
-    provider:"google",
-    options:{ redirectTo:location.href }
-  });
+  await supabase.auth.signInWithOAuth({ provider:"google",options:{ redirectTo:location.href } });
 }
-function guest(){
-  login.style.display="none";
-}
+function guest(){ login.style.display="none"; }
 async function logout(){
   await supabase.auth.signOut();
   location.reload();
 }
 
 /* SETTINGS */
-openSettings.onclick=()=>{
-  settings.classList.add("open");
-  overlay.classList.add("open");
-};
-overlay.onclick=()=>{
-  settings.classList.remove("open");
-  overlay.classList.remove("open");
-};
+openSettings.onclick=()=>{ settings.classList.add("open"); overlay.classList.add("open"); };
+overlay.onclick=()=>{ settings.classList.remove("open"); overlay.classList.remove("open"); };
 </script>
 
 </body>
