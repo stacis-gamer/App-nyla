@@ -191,6 +191,11 @@ async function sendMsg(){
 }
 
 /* ===== LIVE2D ===== */
+const g = new PIXI.Graphics();
+g.beginFill(0xff00ff);
+g.drawRect(0, 0, 200, 200);
+g.endFill();
+app.stage.addChild(g);
 (async()=>{
   try{
     const app = new PIXI.Application({
