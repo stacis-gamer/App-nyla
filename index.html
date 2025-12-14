@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Nyla 💜</title>
 
 <style>
@@ -11,11 +11,12 @@
   --panel:#16161f;
   --header:#1a1a26;
   --border:#2a2a3a;
-  --nyla:#1e1e2e;
+  --bubble:#1e1e2e;
   --u1:#e879f9;
   --u2:#a78bfa;
   --text:#e4e4e7;
 }
+
 *{margin:0;padding:0;box-sizing:border-box}
 
 body{
@@ -69,6 +70,7 @@ body{
   max-width:75%;
   padding:.75rem 1rem;
   border-radius:16px;
+  animation:fade .25s ease;
 }
 .user{
   align-self:flex-end;
@@ -77,13 +79,18 @@ body{
 }
 .nyla{
   align-self:flex-start;
-  background:var(--nyla);
+  background:var(--bubble);
 }
 .emotion{
   font-size:.7rem;
   opacity:.7;
   color:var(--u2);
   margin-top:4px;
+}
+
+@keyframes fade{
+  from{opacity:0;transform:translateY(6px)}
+  to{opacity:1;transform:none}
 }
 
 /* INPUT */
@@ -100,23 +107,26 @@ body{
   border:none;
   outline:none;
   color:var(--text);
+  font-size:1rem;
 }
 .input button{
   width:40px;height:40px;border-radius:50%;
   border:none;
   background:linear-gradient(135deg,var(--u1),var(--u2));
   color:#fff;
+  font-size:1.1rem;
 }
 
-/* LIVE2D */
-#live2d-container{
+/* NYLA PNG */
+#nyla{
   position:fixed;
   right:0;
   bottom:0;
-  width:360px;
-  height:560px;
+  width:320px;
+  max-height:80vh;
   pointer-events:none;
   z-index:1;
+  transition:opacity .25s ease;
 }
 </style>
 </head>
@@ -135,90 +145,89 @@ body{
   <div class="messages" id="messages"></div>
 
   <div class="input">
-    <input id="input" placeholder="Message Nyla…" />
+    <input id="input" placeholder="Message Nyla…" autocomplete="off">
     <button id="send">➤</button>
   </div>
 </div>
 
-<div id="live2d-container"></div>
-
-<!-- ✅ REQUIRED LIB ORDER (DO NOT CHANGE) -->
-<script src="https://stacis-gamer.github.io/App-nyla/live2dcubismcore.min.js"></script>
-<script src="https://unpkg.com/pixi.js@6.5.9/dist/browser/pixi.min.js"></script>
-<script src="https://unpkg.com/pixi-live2d-display@0.4.0/dist/index.min.js"></script>
+<!-- NYLA IMAGE -->
+<img id="nyla" src="asset/nyla/idle.png" alt="Nyla">
 
 <script>
-/* ===== CHAT ===== */
-const API="https://nyla-api.onrender.com/nyla";
-const msgs=document.getElementById("messages");
-const input=document.getElementById("input");
-const send=document.getElementById("send");
+/* ===== CONFIG ===== */
+const API = "https://nyla-api.onrender.com/nyla";
 
-send.onclick=sendMsg;
-input.onkeydown=e=>e.key==="Enter"&&sendMsg();
+/* emotion → png */
+const emotionMap = {
+  happy: "asset/nyla/happy.png",
+  sad: "asset/nyla/sad.png",
+  angry: "asset/nyla/angry.png",
+  blush: "asset/nyla/blush.png",
+  shocked: "asset/nyla/shocked.png",
+  smug: "asset/nyla/smug.png",
+  sleepy: "asset/nyla/sleepy.png",
+  excited: "asset/nyla/excited.png",
+  gamer: "asset/nyla/gamer.png",
+  idle: "asset/nyla/idle.png"
+};
 
-function add(text,cls,emo){
-  const m=document.createElement("div");
-  m.className="msg "+cls;
-  m.textContent=text;
+const nylaImg = document.getElementById("nyla");
+const msgs = document.getElementById("messages");
+const input = document.getElementById("input");
+const send = document.getElementById("send");
+
+send.onclick = sendMsg;
+input.onkeydown = e => e.key === "Enter" && sendMsg();
+
+function add(text, cls, emo){
+  const m = document.createElement("div");
+  m.className = "msg " + cls;
+  m.textContent = text;
   msgs.appendChild(m);
+
   if(emo){
-    const e=document.createElement("div");
-    e.className="emotion";
-    e.textContent=emo;
+    const e = document.createElement("div");
+    e.className = "emotion";
+    e.textContent = emo;
     m.appendChild(e);
+    setEmotion(emo);
   }
-  msgs.scrollTop=msgs.scrollHeight;
+
+  msgs.scrollTop = msgs.scrollHeight;
+}
+
+function setEmotion(emo){
+  const src = emotionMap[emo] || emotionMap.idle;
+  nylaImg.style.opacity = "0";
+  setTimeout(()=>{
+    nylaImg.src = src;
+    nylaImg.style.opacity = "1";
+  },120);
+
+  // back to idle
+  setTimeout(()=>{
+    nylaImg.src = emotionMap.idle;
+  },4000);
 }
 
 async function sendMsg(){
   if(!input.value) return;
-  const text=input.value;
-  input.value="";
+  const text = input.value;
+  input.value = "";
   add(text,"user");
 
   try{
-    const r=await fetch(API,{
+    const r = await fetch(API,{
       method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:text})
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ message:text })
     });
-    const d=await r.json();
+    const d = await r.json();
     add(d.reply,"nyla",d.emotion);
   }catch{
     add("I'm recharging rn 🔋","nyla","sleepy");
   }
 }
-
-/* ===== LIVE2D (WORKING) ===== */
-(async()=>{
-  try{
-    const app = new PIXI.Application({
-      width:360,
-      height:560,
-      backgroundAlpha:0,
-      autoStart:true
-    });
-
-    document.getElementById("live2d-container").appendChild(app.view);
-
-    const model = await PIXI.live2d.Live2DModel.from(
-      "https://stacis-gamer.github.io/App-nyla/1113_v2/Z.model3.json"
-    );
-
-    model.anchor.set(0.5,1);
-    model.scale.set(0.6);
-    model.x = app.renderer.width / 2;
-    model.y = app.renderer.height;
-
-    app.stage.addChild(model);
-
-    console.log("💜 Nyla is ON SCREEN");
-
-  }catch(e){
-    console.error("❌ Live2D failed:", e);
-  }
-})();
 </script>
 
 </body>
