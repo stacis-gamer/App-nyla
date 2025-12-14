@@ -108,7 +108,7 @@ body{
   color:#fff;
 }
 
-/* LIVE2D CONTAINER */
+/* LIVE2D */
 #live2d-container{
   position:fixed;
   right:0;
@@ -142,7 +142,7 @@ body{
 
 <div id="live2d-container"></div>
 
-<!-- REQUIRED LIBS -->
+<!-- ✅ REQUIRED LIB ORDER (DO NOT CHANGE) -->
 <script src="https://stacis-gamer.github.io/App-nyla/live2dcubismcore.min.js"></script>
 <script src="https://unpkg.com/pixi.js@6.5.9/dist/browser/pixi.min.js"></script>
 <script src="https://unpkg.com/pixi-live2d-display@0.4.0/dist/index.min.js"></script>
@@ -190,18 +190,13 @@ async function sendMsg(){
   }
 }
 
-/* ===== LIVE2D ===== */
-const g = new PIXI.Graphics();
-g.beginFill(0xff00ff);
-g.drawRect(0, 0, 200, 200);
-g.endFill();
-app.stage.addChild(g);
+/* ===== LIVE2D (WORKING) ===== */
 (async()=>{
   try{
     const app = new PIXI.Application({
       width:360,
       height:560,
-      transparent:true,
+      backgroundAlpha:0,
       autoStart:true
     });
 
@@ -218,12 +213,10 @@ app.stage.addChild(g);
 
     app.stage.addChild(model);
 
-    app.ticker.add(delta => model.update(delta));
-
-    console.log("💜 Nyla LIVE2D ON SCREEN");
+    console.log("💜 Nyla is ON SCREEN");
 
   }catch(e){
-    console.error("❌ Live2D failed:",e);
+    console.error("❌ Live2D failed:", e);
   }
 })();
 </script>
