@@ -56,7 +56,6 @@ body{
   font-weight:700;color:#fff;
 }
 .status{font-size:.75rem;color:var(--u2)}
-.settings-btn{cursor:pointer;font-size:1.3rem}
 
 /* MESSAGES */
 .messages{
@@ -88,11 +87,8 @@ body{
   margin-top:4px;
 }
 
-/* TYPING INDICATOR */
-.typing{
-  display:flex;
-  gap:6px;
-}
+/* TYPING */
+.typing{display:flex;gap:6px}
 .dot{
   width:8px;height:8px;border-radius:50%;
   background:var(--u2);
@@ -127,7 +123,7 @@ body{
   color:#fff;
 }
 
-/* NYLA PNG */
+/* NYLA */
 #nyla{
   position:absolute;
   right:-10px;
@@ -136,7 +132,7 @@ body{
   pointer-events:none;
 }
 
-/* LOGIN OVERLAY */
+/* LOGIN */
 .login-overlay{
   position:fixed;
   inset:0;
@@ -191,7 +187,6 @@ body{
         <div class="status">online</div>
       </div>
     </div>
-    <div class="settings-btn">⚙️</div>
   </div>
 
   <div class="messages" id="messages"></div>
@@ -218,50 +213,63 @@ body{
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ================= CONFIG ================= */
+/* ================= SUPABASE ================= */
 const supabase = window.supabase.createClient(
   "https://zdgsvguebwfecnlboxiq.supabase.co",
-  "YOUR_ANON_KEY_HERE"
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZ3N2Z3VlYndmZWNubGJveGlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDgyNjMsImV4cCI6MjA4MTI4NDI2M30.SqAzHVqbA5YTgkhpxhEFlBhbLBNumVi4_lnSLoBuKR0"
 );
 
 const API = "https://nyla-api.onrender.com/nyla";
+
+/* ================= STATE ================= */
 const msgs = document.getElementById("messages");
 const input = document.getElementById("input");
 const send = document.getElementById("send");
 const login = document.getElementById("login");
 
-let user = null;
+let currentUser = null;
 let typingBubble = null;
+let isRestoring = false;
 
 /* ================= AUTH ================= */
-async function restore(){
+async function restoreSession(){
   const { data } = await supabase.auth.getSession();
-  user = data.session?.user || null;
-  if(user){
-    login.style.display="none";
-    loadChats();
+  currentUser = data.session?.user || null;
+
+  if(currentUser){
+    login.style.display = "none";
+    loadCloudChats();
   }
 }
-restore();
+
+supabase.auth.onAuthStateChange((_e, session)=>{
+  currentUser = session?.user || null;
+  if(currentUser){
+    login.style.display="none";
+    loadCloudChats();
+  }
+});
+
+restoreSession();
 
 async function signIn(){
   await supabase.auth.signInWithPassword({
-    email:email.value,password:password.value
+    email:email.value,
+    password:password.value
   });
-  restore();
 }
 async function signUp(){
   await supabase.auth.signUp({
-    email:email.value,password:password.value
+    email:email.value,
+    password:password.value
   });
-  restore();
 }
 async function google(){
   await supabase.auth.signInWithOAuth({ provider:"google" });
 }
 function guest(){
   login.style.display="none";
-  loadLocal();
+  loadLocalChats();
 }
 
 /* ================= UI ================= */
@@ -270,12 +278,14 @@ function render(text,sender,emotion){
   m.className="msg "+sender;
   m.textContent=text;
   msgs.appendChild(m);
+
   if(emotion){
     const e=document.createElement("div");
     e.className="emotion";
     e.textContent=emotion;
     m.appendChild(e);
   }
+
   msgs.scrollTop=msgs.scrollHeight;
 }
 
@@ -289,14 +299,14 @@ function showTyping(){
       <div class="dot"></div>
     </div>`;
   msgs.appendChild(typingBubble);
-  msgs.scrollTop=msgs.scrollHeight;
 }
+
 function hideTyping(){
   typingBubble?.remove();
   typingBubble=null;
 }
 
-/* ================= CHAT ================= */
+/* ================= SEND ================= */
 send.onclick=sendMsg;
 input.onkeydown=e=>{
   if(e.key==="Enter"){e.preventDefault();sendMsg();}
@@ -309,9 +319,9 @@ async function sendMsg(){
   render(text,"user");
   showTyping();
 
-  if(user){
+  if(currentUser){
     await supabase.from("nyla_messages")
-      .insert({ user_id:user.id,sender:"user",text });
+      .insert({ user_id:currentUser.id, sender:"user", text });
   }else{
     saveLocal({sender:"user",text});
   }
@@ -326,9 +336,9 @@ async function sendMsg(){
     hideTyping();
     render(d.reply,"nyla",d.emotion);
 
-    if(user){
+    if(currentUser){
       await supabase.from("nyla_messages")
-        .insert({ user_id:user.id,sender:"nyla",text:d.reply,emotion:d.emotion });
+        .insert({ user_id:currentUser.id, sender:"nyla", text:d.reply, emotion:d.emotion });
     }else{
       saveLocal({sender:"nyla",text:d.reply,emotion:d.emotion});
     }
@@ -339,13 +349,14 @@ async function sendMsg(){
 }
 
 /* ================= LOAD ================= */
-async function loadChats(){
+async function loadCloudChats(){
   msgs.innerHTML="";
   const { data } = await supabase
     .from("nyla_messages")
     .select("*")
-    .eq("user_id",user.id)
+    .eq("user_id",currentUser.id)
     .order("created_at",{ascending:true});
+
   data?.forEach(m=>render(m.text,m.sender,m.emotion));
 }
 
@@ -355,7 +366,7 @@ function saveLocal(m){
   a.push(m);
   localStorage.setItem("nyla_local",JSON.stringify(a));
 }
-function loadLocal(){
+function loadLocalChats(){
   const a=JSON.parse(localStorage.getItem("nyla_local")||"[]");
   a.forEach(m=>render(m.text,m.sender,m.emotion));
 }
