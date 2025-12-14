@@ -69,42 +69,21 @@ body{
   max-width:75%;
   padding:.75rem 1rem;
   border-radius:16px;
-  animation:fade .25s ease;
 }
 .user{
   align-self:flex-end;
   background:linear-gradient(135deg,var(--u1),var(--u2));
   color:#fff;
-  border-bottom-right-radius:4px;
 }
 .nyla{
   align-self:flex-start;
   background:var(--nyla);
-  border-bottom-left-radius:4px;
 }
 .emotion{
   font-size:.7rem;
-  margin-top:4px;
   opacity:.7;
   color:var(--u2);
-}
-@keyframes fade{
-  from{opacity:0;transform:translateY(6px)}
-  to{opacity:1;transform:none}
-}
-
-/* TYPING */
-.typing{display:flex;gap:6px}
-.dot{
-  width:8px;height:8px;border-radius:50%;
-  background:var(--u2);
-  animation:bounce 1.4s infinite;
-}
-.dot:nth-child(2){animation-delay:.2s}
-.dot:nth-child(3){animation-delay:.4s}
-@keyframes bounce{
-  0%,80%,100%{opacity:.4}
-  40%{opacity:1;transform:translateY(-6px)}
+  margin-top:4px;
 }
 
 /* INPUT */
@@ -121,24 +100,23 @@ body{
   border:none;
   outline:none;
   color:var(--text);
-  font-size:1rem;
 }
 .input button{
   width:40px;height:40px;border-radius:50%;
   border:none;
   background:linear-gradient(135deg,var(--u1),var(--u2));
-  color:#fff;font-size:1.1rem;
+  color:#fff;
 }
 
-/* LIVE2D */
-#nyla-canvas{
+/* LIVE2D CONTAINER */
+#live2d-container{
   position:fixed;
   right:0;
   bottom:0;
   width:360px;
   height:560px;
   pointer-events:none;
-  z-index:5;
+  z-index:1;
 }
 </style>
 </head>
@@ -162,11 +140,11 @@ body{
   </div>
 </div>
 
-<canvas id="nyla-canvas"></canvas>
+<div id="live2d-container"></div>
 
 <!-- REQUIRED LIBS -->
 <script src="https://stacis-gamer.github.io/App-nyla/live2dcubismcore.min.js"></script>
-<script src="https://unpkg.com/pixi.js@7.3.2/dist/pixi.min.js"></script>
+<script src="https://unpkg.com/pixi.js@6.5.9/dist/browser/pixi.min.js"></script>
 <script src="https://unpkg.com/pixi-live2d-display@0.4.0/dist/index.min.js"></script>
 
 <script>
@@ -175,7 +153,6 @@ const API="https://nyla-api.onrender.com/nyla";
 const msgs=document.getElementById("messages");
 const input=document.getElementById("input");
 const send=document.getElementById("send");
-let typing;
 
 send.onclick=sendMsg;
 input.onkeydown=e=>e.key==="Enter"&&sendMsg();
@@ -194,21 +171,12 @@ function add(text,cls,emo){
   msgs.scrollTop=msgs.scrollHeight;
 }
 
-function showTyping(){
-  typing=document.createElement("div");
-  typing.className="msg nyla";
-  typing.innerHTML='<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>';
-  msgs.appendChild(typing);
-  msgs.scrollTop=msgs.scrollHeight;
-}
-function hideTyping(){typing?.remove()}
-
 async function sendMsg(){
   if(!input.value) return;
   const text=input.value;
   input.value="";
   add(text,"user");
-  showTyping();
+
   try{
     const r=await fetch(API,{
       method:"POST",
@@ -216,41 +184,41 @@ async function sendMsg(){
       body:JSON.stringify({message:text})
     });
     const d=await r.json();
-    hideTyping();
     add(d.reply,"nyla",d.emotion);
   }catch{
-    hideTyping();
     add("I'm recharging rn 🔋","nyla","sleepy");
   }
 }
 
-/* ===== LIVE2D (FIXED) ===== */
+/* ===== LIVE2D ===== */
 (async()=>{
   try{
     const app = new PIXI.Application({
-      view: document.getElementById("nyla-canvas"),
-      width: 360,
-      height: 560,
-      backgroundAlpha: 0,
-      resolution: window.devicePixelRatio || 1,
-      autoDensity: true
+      width:360,
+      height:560,
+      transparent:true,
+      autoStart:true
     });
+
+    document.getElementById("live2d-container").appendChild(app.view);
 
     const model = await PIXI.live2d.Live2DModel.from(
       "https://stacis-gamer.github.io/App-nyla/1113_v2/Z.model3.json"
     );
 
-    model.anchor.set(0.5, 1);
-    model.scale.set(0.35);
+    model.anchor.set(0.5,1);
+    model.scale.set(0.6);
     model.x = app.renderer.width / 2;
-    model.y = app.renderer.height + 20;
+    model.y = app.renderer.height;
 
     app.stage.addChild(model);
 
-    console.log("💜 Nyla Live2D rendered");
+    app.ticker.add(delta => model.update(delta));
+
+    console.log("💜 Nyla LIVE2D ON SCREEN");
 
   }catch(e){
-    console.error("❌ Live2D error:", e);
+    console.error("❌ Live2D failed:",e);
   }
 })();
 </script>
