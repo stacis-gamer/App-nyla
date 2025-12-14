@@ -18,7 +18,6 @@
 }
 
 *{margin:0;padding:0;box-sizing:border-box}
-
 body{
   background:var(--bg);
   color:var(--text);
@@ -26,7 +25,7 @@ body{
   font-family:system-ui,sans-serif;
 }
 
-/* ================= APP ================= */
+/* APP */
 .app{
   max-width:720px;
   margin:0 auto;
@@ -57,6 +56,7 @@ body{
   font-weight:700;color:#fff;
 }
 .status{font-size:.75rem;color:var(--u2)}
+.settings-btn{cursor:pointer;font-size:1.3rem}
 
 /* MESSAGES */
 .messages{
@@ -88,6 +88,23 @@ body{
   margin-top:4px;
 }
 
+/* TYPING INDICATOR */
+.typing{
+  display:flex;
+  gap:6px;
+}
+.dot{
+  width:8px;height:8px;border-radius:50%;
+  background:var(--u2);
+  animation:bounce 1.4s infinite;
+}
+.dot:nth-child(2){animation-delay:.2s}
+.dot:nth-child(3){animation-delay:.4s}
+@keyframes bounce{
+  0%,80%,100%{opacity:.4}
+  40%{opacity:1;transform:translateY(-6px)}
+}
+
 /* INPUT */
 .input{
   display:flex;
@@ -102,14 +119,12 @@ body{
   border:none;
   outline:none;
   color:var(--text);
-  font-size:1rem;
 }
 .input button{
   width:40px;height:40px;border-radius:50%;
   border:none;
   background:linear-gradient(135deg,var(--u1),var(--u2));
   color:#fff;
-  font-size:1.1rem;
 }
 
 /* NYLA PNG */
@@ -121,115 +136,52 @@ body{
   pointer-events:none;
 }
 
-/* ================= LOGIN OVERLAY ================= */
+/* LOGIN OVERLAY */
 .login-overlay{
   position:fixed;
   inset:0;
-  background:rgba(10,10,20,.85);
-  backdrop-filter:blur(8px);
+  background:rgba(0,0,0,.65);
   display:flex;
   align-items:center;
   justify-content:center;
-  z-index:50;
+  z-index:20;
 }
-
-.login-card{
-  width:320px;
+.login-box{
   background:var(--panel);
   border:1px solid var(--border);
-  border-radius:18px;
   padding:1.5rem;
-  text-align:center;
+  border-radius:16px;
+  width:90%;
+  max-width:340px;
 }
-
-.login-card h2{
-  margin-bottom:.25rem;
-}
-.login-card p{
-  font-size:.85rem;
-  opacity:.7;
-  margin-bottom:1rem;
-}
-
-.login-card input{
+.login-box h2{margin-bottom:1rem}
+.login-box input{
   width:100%;
   padding:.6rem;
-  margin-bottom:.6rem;
-  border-radius:10px;
-  border:1px solid var(--border);
+  margin-bottom:.75rem;
   background:var(--bubble);
+  border:none;
+  border-radius:8px;
   color:var(--text);
 }
-
-.login-card button{
+.login-box button{
   width:100%;
   padding:.6rem;
+  margin-bottom:.5rem;
   border:none;
-  border-radius:10px;
-  margin-top:.4rem;
-  cursor:pointer;
-}
-
-.login-card .primary{
+  border-radius:8px;
   background:linear-gradient(135deg,var(--u1),var(--u2));
   color:#fff;
-}
-
-.toggle{
-  margin-top:.6rem;
-  font-size:.8rem;
-}
-.toggle button{
-  background:none;
-  border:none;
-  color:var(--u2);
   cursor:pointer;
 }
-
-.divider{
-  margin:1rem 0;
-  font-size:.75rem;
-  opacity:.5;
-}
-
-.google{
-  background:#fff;
-  color:#000;
-}
-
-.guest{
+.login-box .alt{
   background:var(--bubble);
-  color:var(--text);
 }
 </style>
 </head>
 
 <body>
 
-<!-- LOGIN -->
-<div class="login-overlay" id="loginOverlay">
-  <div class="login-card">
-    <h2>Nyla 💜</h2>
-    <p id="loginDesc">Welcome back</p>
-
-    <input id="email" type="email" placeholder="Email">
-    <input id="password" type="password" placeholder="Password">
-
-    <button class="primary" id="authBtn" onclick="handleAuth()">Sign In</button>
-
-    <div class="toggle">
-      <span id="toggleText">New here?</span>
-      <button onclick="toggleMode()">Create account</button>
-    </div>
-
-    <div class="divider">or</div>
-
-    <button class="google" onclick="loginGoogle()">Continue with Google</button>
-    <button class="guest" onclick="continueGuest()">Continue as Guest</button>
-  </div>
-</div>
-
-<!-- APP -->
 <div class="app">
   <div class="header">
     <div class="header-left">
@@ -239,6 +191,7 @@ body{
         <div class="status">online</div>
       </div>
     </div>
+    <div class="settings-btn">⚙️</div>
   </div>
 
   <div class="messages" id="messages"></div>
@@ -250,102 +203,162 @@ body{
   </div>
 </div>
 
+<!-- LOGIN -->
+<div class="login-overlay" id="login">
+  <div class="login-box">
+    <h2>Welcome 💜</h2>
+    <input id="email" placeholder="Email">
+    <input id="password" type="password" placeholder="Password">
+    <button onclick="signIn()">Sign In</button>
+    <button class="alt" onclick="signUp()">Sign Up</button>
+    <button class="alt" onclick="google()">Continue with Google</button>
+    <button class="alt" onclick="guest()">Continue as Guest</button>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ================= SUPABASE ================= */
+/* ================= CONFIG ================= */
 const supabase = window.supabase.createClient(
   "https://zdgsvguebwfecnlboxiq.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZ3N2Z3VlYndmZWNubGJveGlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDgyNjMsImV4cCI6MjA4MTI4NDI2M30.SqAzHVqbA5YTgkhpxhEFlBhbLBNumVi4_lnSLoBuKR0"
+  "YOUR_ANON_KEY_HERE"
 );
 
-const API="https://nyla-api.onrender.com/nyla";
+const API = "https://nyla-api.onrender.com/nyla";
+const msgs = document.getElementById("messages");
+const input = document.getElementById("input");
+const send = document.getElementById("send");
+const login = document.getElementById("login");
 
-/* ================= LOGIN LOGIC ================= */
-let isSignup=false;
-let isGuest=false;
+let user = null;
+let typingBubble = null;
 
-function toggleMode(){
-  isSignup=!isSignup;
-  document.getElementById("loginDesc").textContent =
-    isSignup ? "Create your account" : "Welcome back";
-  document.getElementById("authBtn").textContent =
-    isSignup ? "Sign Up" : "Sign In";
-  document.getElementById("toggleText").textContent =
-    isSignup ? "Already have an account?" : "New here?";
-}
-
-async function handleAuth(){
-  const email=emailInput.value;
-  const password=passwordInput.value;
-
-  if(isSignup){
-    const {error}=await supabase.auth.signUp({email,password});
-    if(error) return alert(error.message);
-    alert("Check your email 💌");
-  }else{
-    const {error}=await supabase.auth.signInWithPassword({email,password});
-    if(error) return alert(error.message);
-    closeLogin();
+/* ================= AUTH ================= */
+async function restore(){
+  const { data } = await supabase.auth.getSession();
+  user = data.session?.user || null;
+  if(user){
+    login.style.display="none";
+    loadChats();
   }
 }
+restore();
 
-async function loginGoogle(){
-  await supabase.auth.signInWithOAuth({
-    provider:"google",
-    options:{redirectTo:location.href}
+async function signIn(){
+  await supabase.auth.signInWithPassword({
+    email:email.value,password:password.value
   });
+  restore();
+}
+async function signUp(){
+  await supabase.auth.signUp({
+    email:email.value,password:password.value
+  });
+  restore();
+}
+async function google(){
+  await supabase.auth.signInWithOAuth({ provider:"google" });
+}
+function guest(){
+  login.style.display="none";
+  loadLocal();
 }
 
-function continueGuest(){
-  isGuest=true;
-  closeLogin();
-}
-
-/* SESSION */
-(async()=>{
-  const {data:{session}}=await supabase.auth.getSession();
-  if(session) closeLogin();
-})();
-
-function closeLogin(){
-  document.getElementById("loginOverlay").style.display="none";
-}
-
-/* ================= CHAT ================= */
-const msgs=document.getElementById("messages");
-const input=document.getElementById("input");
-document.getElementById("send").onclick=sendMsg;
-
-function add(text,sender){
+/* ================= UI ================= */
+function render(text,sender,emotion){
   const m=document.createElement("div");
   m.className="msg "+sender;
   m.textContent=text;
   msgs.appendChild(m);
+  if(emotion){
+    const e=document.createElement("div");
+    e.className="emotion";
+    e.textContent=emotion;
+    m.appendChild(e);
+  }
   msgs.scrollTop=msgs.scrollHeight;
 }
+
+function showTyping(){
+  typingBubble=document.createElement("div");
+  typingBubble.className="msg nyla";
+  typingBubble.innerHTML=`
+    <div class="typing">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>`;
+  msgs.appendChild(typingBubble);
+  msgs.scrollTop=msgs.scrollHeight;
+}
+function hideTyping(){
+  typingBubble?.remove();
+  typingBubble=null;
+}
+
+/* ================= CHAT ================= */
+send.onclick=sendMsg;
+input.onkeydown=e=>{
+  if(e.key==="Enter"){e.preventDefault();sendMsg();}
+};
 
 async function sendMsg(){
   const text=input.value.trim();
   if(!text) return;
   input.value="";
-  add(text,"user");
+  render(text,"user");
+  showTyping();
+
+  if(user){
+    await supabase.from("nyla_messages")
+      .insert({ user_id:user.id,sender:"user",text });
+  }else{
+    saveLocal({sender:"user",text});
+  }
 
   try{
     const r=await fetch(API,{
       method:"POST",
-      headers:{"Content-Type":"application/json"},
-      body:JSON.stringify({message:text})
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ message:text })
     });
     const d=await r.json();
-    add(d.reply,"nyla");
+    hideTyping();
+    render(d.reply,"nyla",d.emotion);
+
+    if(user){
+      await supabase.from("nyla_messages")
+        .insert({ user_id:user.id,sender:"nyla",text:d.reply,emotion:d.emotion });
+    }else{
+      saveLocal({sender:"nyla",text:d.reply,emotion:d.emotion});
+    }
   }catch{
-    add("I'm recharging rn 🔋","nyla");
+    hideTyping();
+    render("I’m recharging 🔋","nyla","sleepy");
   }
 }
 
-/* SHORTCUTS */
-const emailInput=document.getElementById("email");
-const passwordInput=document.getElementById("password");
+/* ================= LOAD ================= */
+async function loadChats(){
+  msgs.innerHTML="";
+  const { data } = await supabase
+    .from("nyla_messages")
+    .select("*")
+    .eq("user_id",user.id)
+    .order("created_at",{ascending:true});
+  data?.forEach(m=>render(m.text,m.sender,m.emotion));
+}
+
+/* ================= LOCAL ================= */
+function saveLocal(m){
+  const a=JSON.parse(localStorage.getItem("nyla_local")||"[]");
+  a.push(m);
+  localStorage.setItem("nyla_local",JSON.stringify(a));
+}
+function loadLocal(){
+  const a=JSON.parse(localStorage.getItem("nyla_local")||"[]");
+  a.forEach(m=>render(m.text,m.sender,m.emotion));
+}
 </script>
 
 </body>
