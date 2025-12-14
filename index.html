@@ -151,24 +151,24 @@ body{
 </div>
 
 <!-- NYLA IMAGE -->
-<img id="nyla" src="asset/nyla/idle.png" alt="Nyla">
+<img id="nyla" src="assets/nyla/idle.png" alt="Nyla">
 
 <script>
 /* ===== CONFIG ===== */
 const API = "https://nyla-api.onrender.com/nyla";
 
-/* emotion → png */
+/* emotion → png (FINAL PATH) */
 const emotionMap = {
-  happy: "asset/nyla/happy.png",
-  sad: "asset/nyla/sad.png",
-  angry: "asset/nyla/angry.png",
-  blush: "asset/nyla/blush.png",
-  shocked: "asset/nyla/shocked.png",
-  smug: "asset/nyla/smug.png",
-  sleepy: "asset/nyla/sleepy.png",
-  excited: "asset/nyla/excited.png",
-  gamer: "asset/nyla/gamer.png",
-  idle: "asset/nyla/idle.png"
+  happy: "assets/nyla/happy.png",
+  sad: "assets/nyla/sad.png",
+  angry: "assets/nyla/angry.png",
+  blush: "assets/nyla/blush.png",
+  shocked: "assets/nyla/shocked.png",
+  smug: "assets/nyla/smug.png",
+  sleepy: "assets/nyla/sleepy.png",
+  excited: "assets/nyla/excited.png",
+  gamer: "assets/nyla/gamer.png",
+  idle: "assets/nyla/idle.png"
 };
 
 const nylaImg = document.getElementById("nyla");
@@ -204,7 +204,6 @@ function setEmotion(emo){
     nylaImg.style.opacity = "1";
   },120);
 
-  // back to idle
   setTimeout(()=>{
     nylaImg.src = emotionMap.idle;
   },4000);
