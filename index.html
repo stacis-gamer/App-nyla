@@ -94,10 +94,7 @@ body{
 }
 
 /* TYPING */
-.typing{
-  display:flex;
-  gap:6px;
-}
+.typing{display:flex;gap:6px}
 .dot{
   width:8px;height:8px;border-radius:50%;
   background:var(--u2);
@@ -136,11 +133,11 @@ body{
   font-size:1.1rem;
 }
 
-/* NYLA PNG (STABLE) */
+/* NYLA PNG */
 #nyla{
   position:absolute;
   right:-10px;
-  bottom:90px; /* safely above input */
+  bottom:90px;
   width:260px;
   max-height:70vh;
   pointer-events:none;
@@ -163,7 +160,6 @@ body{
 
   <div class="messages" id="messages"></div>
 
-  <!-- NYLA IMAGE INSIDE APP -->
   <img id="nyla" src="assets/nyla/idle.png" alt="Nyla">
 
   <div class="input">
@@ -176,7 +172,6 @@ body{
 /* CONFIG */
 const API = "https://nyla-api.onrender.com/nyla";
 
-/* emotion → png */
 const emotionMap = {
   happy: "assets/nyla/happy.png",
   sad: "assets/nyla/sad.png",
@@ -197,10 +192,16 @@ const send = document.getElementById("send");
 
 let typingBubble = null;
 
-send.onclick = sendMsg;
-input.onkeydown = e => e.key === "Enter" && sendMsg();
+/* EVENTS */
+send.addEventListener("click", sendMsg);
+input.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.isComposing) {
+    e.preventDefault();
+    sendMsg();
+  }
+});
 
-/* UI HELPERS */
+/* UI */
 function add(text, cls, emo){
   const m = document.createElement("div");
   m.className = "msg " + cls;
@@ -208,10 +209,10 @@ function add(text, cls, emo){
   msgs.appendChild(m);
 
   if(emo){
-    const e = document.createElement("div");
-    e.className = "emotion";
-    e.textContent = emo;
-    m.appendChild(e);
+    const em = document.createElement("div");
+    em.className = "emotion";
+    em.textContent = emo;
+    m.appendChild(em);
     setEmotion(emo);
   }
 
@@ -232,8 +233,10 @@ function showTyping(){
 }
 
 function hideTyping(){
-  typingBubble?.remove();
-  typingBubble = null;
+  if(typingBubble){
+    typingBubble.remove();
+    typingBubble = null;
+  }
 }
 
 function setEmotion(emo){
@@ -251,8 +254,9 @@ function setEmotion(emo){
 
 /* SEND */
 async function sendMsg(){
-  if(!input.value) return;
-  const text = input.value;
+  const text = input.value.trim();
+  if(!text) return;
+
   input.value = "";
   add(text,"user");
   showTyping();
