@@ -33,7 +33,6 @@ body{
   border-left:1px solid var(--border);
   border-right:1px solid var(--border);
   position:relative;
-  overflow:hidden;
 }
 
 /* HEADER */
@@ -114,14 +113,13 @@ body{
   color:#fff;
 }
 
-/* NYLA MODEL */
+/* NYLA */
 #nyla{
   position:absolute;
   right:-10px;
   bottom:100px;
   width:260px;
   pointer-events:none;
-  z-index:5;
 }
 
 /* SETTINGS */
@@ -147,7 +145,7 @@ body{
   margin-bottom:.5rem;padding:.6rem;
   background:var(--bubble);border:none;
   color:var(--text);border-radius:8px;
-  cursor:pointer;text-decoration:none;
+  cursor:pointer;
 }
 .settings-footer{
   position:absolute;bottom:1rem;left:1rem;right:1rem;
@@ -202,9 +200,9 @@ body{
 <div class="settings" id="settings">
   <details>
     <summary>Developer Contacts</summary>
-    <a href="https://www.instagram.com/blub_fish.stacis?igsh=bmY1bnh6dGJxYnYx" target="_blank">Instagram</a>
+    <a href="https://www.instagram.com/blub_fish.stacis" target="_blank">Instagram</a>
     <a href="https://discord.gg/2WMhbdX4" target="_blank">Discord</a>
-    <a href="https://www.facebook.com/share/17jwNsoEfz/" target="_blank">Facebook</a>
+    <a href="https://www.facebook.com" target="_blank">Facebook</a>
   </details>
   <button onclick="clearChat()">Clear Chat</button>
   <button onclick="deleteMemory()" style="color:#f87171">Delete Memory</button>
@@ -224,119 +222,87 @@ body{
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ================= CONFIG ================= */
+console.log("Frontend JS loaded ✅");
+
+/* DOM BINDS */
+const msgs = document.getElementById("messages");
+const input = document.getElementById("input");
+const send = document.getElementById("send");
+const login = document.getElementById("login");
+const openSettings = document.getElementById("openSettings");
+const settings = document.getElementById("settings");
+const overlay = document.getElementById("overlay");
+
+/* CONFIG */
+const API = "https://nyla-api.onrender.com/nyla";
 const supabase = window.supabase.createClient(
   "https://zdgsvguebwfecnlboxiq.supabase.co",
-  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZ3N2Z3VlYndmZWNubGJveGlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDgyNjMsImV4cCI6MjA4MTI4NDI2M30.SqAzHVqbA5YTgkhpxhEFlBhbLBNumVi4_lnSLoBuKR0"
+  "YOUR_ANON_KEY"
 );
-const API="https://nyla-api.onrender.com/nyla";
 
-/* ================= STATE ================= */
-const msgs=document.getElementById("messages");
-const input=document.getElementById("input");
-const login=document.getElementById("login");
-let userId="guest";
-let typingBubble=null;
-let chatsLoaded=false;
+let userId = "guest";
+let typingBubble = null;
+let chatsLoaded = false;
 
-/* ================= AUTH ================= */
-function applySession(session){
-  if(session?.user){
-    userId=session.user.id;
-    login.style.display="none";
-    if(!chatsLoaded){ loadChats(); chatsLoaded=true; }
-  }else{
-    userId="guest";
-    chatsLoaded=false;
-    login.style.display="flex";
-  }
-}
-supabase.auth.onAuthStateChange((_e,s)=>applySession(s));
-supabase.auth.getSession().then(r=>applySession(r.data.session));
+/* SETTINGS */
+openSettings.onclick = () => {
+  settings.classList.add("open");
+  overlay.classList.add("open");
+};
+overlay.onclick = () => {
+  settings.classList.remove("open");
+  overlay.classList.remove("open");
+};
 
-/* ================= CHAT ================= */
-function render(text,sender){
-  const m=document.createElement("div");
-  m.className="msg "+sender;
-  m.textContent=text;
+/* CHAT UI */
+function render(text, sender){
+  const m = document.createElement("div");
+  m.className = "msg " + sender;
+  m.textContent = text;
   msgs.appendChild(m);
-  msgs.scrollTop=msgs.scrollHeight;
+  msgs.scrollTop = msgs.scrollHeight;
 }
 function showTyping(){
   if(typingBubble) return;
-  typingBubble=document.createElement("div");
-  typingBubble.className="msg nyla";
-  typingBubble.innerHTML=`<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  typingBubble = document.createElement("div");
+  typingBubble.className = "msg nyla";
+  typingBubble.innerHTML =
+    `<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
   msgs.appendChild(typingBubble);
 }
 function hideTyping(){
   typingBubble?.remove();
-  typingBubble=null;
-}
-
-/* LOAD CHAT */
-async function loadChats(){
-  msgs.innerHTML="";
-  if(userId==="guest") return;
-  const { data } = await supabase
-    .from("nyla_messages")
-    .select("*")
-    .eq("user_id",userId)
-    .order("created_at",{ascending:true});
-  data?.forEach(m=>render(m.text,m.sender));
+  typingBubble = null;
 }
 
 /* SEND */
-send.onclick=async ()=>{
-  const text=input.value.trim();
+send.onclick = async () => {
+  const text = input.value.trim();
   if(!text) return;
-  input.value="";
-  render(text,"user");
+  input.value = "";
+  render(text, "user");
   showTyping();
 
-  if(userId!=="guest"){
-    await supabase.from("nyla_messages").insert({ user_id:userId,sender:"user",text });
-  }
-
-  const r=await fetch(API,{
+  const r = await fetch(API,{
     method:"POST",
     headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ message:text,userId })
+    body:JSON.stringify({ message:text, userId })
   });
-  const d=await r.json();
+  const d = await r.json();
   hideTyping();
-  render(d.reply,"nyla");
-
-  if(userId!=="guest"){
-    await supabase.from("nyla_messages").insert({ user_id:userId,sender:"nyla",text:d.reply });
-  }
+  render(d.reply, "nyla");
 };
 
-/* ACTIONS */
-async function clearChat(){
-  if(userId==="guest"){ msgs.innerHTML=""; return; }
-  await supabase.from("nyla_messages").delete().eq("user_id",userId);
-  msgs.innerHTML="";
-}
-async function deleteMemory(){
-  await fetch(API+"/forget-all",{method:"POST",headers:{ "Content-Type":"application/json" },body:JSON.stringify({ userId })});
-  alert("Memory cleared 💭");
-}
-async function signIn(){
-  await supabase.auth.signInWithPassword({ email:email.value,password:password.value });
-}
-async function google(){
-  await supabase.auth.signInWithOAuth({ provider:"google",options:{ redirectTo:location.href } });
-}
-function guest(){ login.style.display="none"; }
-async function logout(){
-  await supabase.auth.signOut();
-  location.reload();
-}
-
-/* SETTINGS */
-openSettings.onclick=()=>{ settings.classList.add("open"); overlay.classList.add("open"); };
-overlay.onclick=()=>{ settings.classList.remove("open"); overlay.classList.remove("open"); };
+/* AUTH */
+supabase.auth.onAuthStateChange((_e,s)=>{
+  if(s?.user){
+    userId = s.user.id;
+    login.style.display = "none";
+  } else {
+    userId = "guest";
+    login.style.display = "flex";
+  }
+});
 </script>
 
 </body>
