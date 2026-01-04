@@ -123,6 +123,7 @@ body{
   transition:.3s;z-index:9;
 }
 .settings-overlay.open{opacity:1;pointer-events:auto}
+
 .settings{
   position:fixed;top:0;right:-280px;
   width:280px;height:100%;
@@ -131,6 +132,7 @@ body{
   padding:1rem;transition:.3s;z-index:10;
 }
 .settings.open{right:0}
+
 .settings details{margin-bottom:1rem}
 .settings summary{cursor:pointer;margin-bottom:.5rem}
 .settings a,.settings button{
@@ -149,15 +151,13 @@ body{
 .login{
   position:fixed;inset:0;
   background:rgba(0,0,0,.7);
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  display:none;
+  align-items:center;justify-content:center;
   z-index:20;
 }
 .login-box{
   background:var(--panel);
-  padding:1.5rem;
-  border-radius:16px;
+  padding:1.5rem;border-radius:16px;
   width:300px;
 }
 .login-box input,.login-box button{
@@ -220,7 +220,6 @@ body{
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-/* ================= CONFIG ================= */
 const supabase = window.supabase.createClient(
   "https://zdgsvguebwfecnlboxiq.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZ3N2Z3VlYndmZWNubGJveGlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDgyNjMsImV4cCI6MjA4MTI4NDI2M30.SqAzHVqbA5YTgkhpxhEFlBhbLBNumVi4_lnSLoBuKR0"
@@ -228,102 +227,74 @@ const supabase = window.supabase.createClient(
 
 const API = "https://nyla-api.onrender.com/nyla";
 
-/* ================= STATE ================= */
+/* DOM */
 const msgs = document.getElementById("messages");
 const input = document.getElementById("input");
 const send = document.getElementById("send");
 const loginBox = document.getElementById("login");
 const settings = document.getElementById("settings");
 const overlay = document.getElementById("overlay");
+const openSettings = document.getElementById("openSettings");
 
 let userId = "guest";
 let typingBubble = null;
 
-/* ================= UI ================= */
-function render(text, sender){
-  const m = document.createElement("div");
-  m.className = "msg " + sender;
-  m.textContent = text;
+/* UI */
+function render(text,sender){
+  const m=document.createElement("div");
+  m.className="msg "+sender;
+  m.textContent=text;
   msgs.appendChild(m);
-  msgs.scrollTop = msgs.scrollHeight;
+  msgs.scrollTop=msgs.scrollHeight;
 }
-
 function showTyping(){
   if(typingBubble) return;
-  typingBubble = document.createElement("div");
-  typingBubble.className = "msg nyla";
-  typingBubble.innerHTML = `
-    <div class="typing">
-      <div class="dot"></div>
-      <div class="dot"></div>
-      <div class="dot"></div>
-    </div>`;
+  typingBubble=document.createElement("div");
+  typingBubble.className="msg nyla";
+  typingBubble.innerHTML=`<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
   msgs.appendChild(typingBubble);
 }
+function hideTyping(){ typingBubble?.remove(); typingBubble=null; }
 
-function hideTyping(){
-  typingBubble?.remove();
-  typingBubble = null;
-}
-
-/* ================= CHAT ================= */
-send.onclick = async () => {
-  const text = input.value.trim();
+/* SEND */
+send.onclick=async ()=>{
+  const text=input.value.trim();
   if(!text) return;
-  input.value = "";
+  input.value="";
   render(text,"user");
   showTyping();
-
   try{
-    const r = await fetch(API,{
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body:JSON.stringify({ message:text, userId })
-    });
-    const d = await r.json();
+    const r=await fetch(API,{method:"POST",headers:{ "Content-Type":"application/json" },body:JSON.stringify({ message:text,userId })});
+    const d=await r.json();
     hideTyping();
     render(d.reply,"nyla");
   }catch{
     hideTyping();
-    render("I'm waking up my brain… 🔋","nyla");
+    render("brain rebooting 🔋","nyla");
   }
 };
 
-/* ================= AUTH ================= */
+/* AUTH */
 function applySession(session){
   if(session?.user){
-    userId = session.user.id;
-    loginBox.style.display = "none";
-  } else {
-    userId = "guest";
-    loginBox.style.display = "flex";
+    userId=session.user.id;
+    loginBox.style.display="none";
+  }else{
+    userId="guest";
+    loginBox.style.display="flex";
   }
 }
-
 supabase.auth.onAuthStateChange((_e,s)=>applySession(s));
 supabase.auth.getSession().then(r=>applySession(r.data.session));
 
-async function signIn(){
-  await supabase.auth.signInWithPassword({ email:email.value,password:password.value });
-}
-async function google(){
-  await supabase.auth.signInWithOAuth({ provider:"google", options:{ redirectTo:location.href } });
-}
+async function signIn(){ await supabase.auth.signInWithPassword({ email:email.value,password:password.value }); }
+async function google(){ await supabase.auth.signInWithOAuth({ provider:"google",options:{ redirectTo:location.href } }); }
 function guest(){ loginBox.style.display="none"; }
-async function logout(){
-  await supabase.auth.signOut();
-  location.reload();
-}
+async function logout(){ await supabase.auth.signOut(); location.reload(); }
 
-/* ================= SETTINGS ================= */
-openSettings.onclick=()=>{
-  settings.classList.add("open");
-  overlay.classList.add("open");
-};
-overlay.onclick=()=>{
-  settings.classList.remove("open");
-  overlay.classList.remove("open");
-};
+/* SETTINGS */
+openSettings.onclick=()=>{ settings.classList.add("open"); overlay.classList.add("open"); };
+overlay.onclick=()=>{ settings.classList.remove("open"); overlay.classList.remove("open"); };
 
 function clearChat(){ msgs.innerHTML=""; }
 function deleteMemory(){ alert("Memory cleared 💭"); }
