@@ -16,17 +16,19 @@
   --u2:#a78bfa;
   --text:#e4e4e7;
 }
+
 *{margin:0;padding:0;box-sizing:border-box}
 body{
   background:var(--bg);
   color:var(--text);
-  min-height:100svh;
+  min-height:100vh;
   font-family:system-ui,sans-serif;
 }
+
 .app{
   max-width:720px;
   margin:0 auto;
-  min-height:100svh;
+  min-height:100vh;
   display:flex;
   flex-direction:column;
   background:var(--panel);
@@ -113,15 +115,6 @@ body{
   color:#fff;
 }
 
-/* NYLA */
-#nyla{
-  position:absolute;
-  right:-10px;
-  bottom:100px;
-  width:260px;
-  pointer-events:none;
-}
-
 /* SETTINGS */
 .settings-overlay{
   position:fixed;inset:0;
@@ -145,7 +138,7 @@ body{
   margin-bottom:.5rem;padding:.6rem;
   background:var(--bubble);border:none;
   color:var(--text);border-radius:8px;
-  cursor:pointer;
+  cursor:pointer;text-decoration:none;
 }
 .settings-footer{
   position:absolute;bottom:1rem;left:1rem;right:1rem;
@@ -155,13 +148,16 @@ body{
 /* LOGIN */
 .login{
   position:fixed;inset:0;
-  background:rgba(0,0,0,.65);
-  display:none;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.7);
+  display:flex;
+  align-items:center;
+  justify-content:center;
   z-index:20;
 }
 .login-box{
   background:var(--panel);
-  padding:1.5rem;border-radius:16px;
+  padding:1.5rem;
+  border-radius:16px;
   width:300px;
 }
 .login-box input,.login-box button{
@@ -188,7 +184,6 @@ body{
   </div>
 
   <div class="messages" id="messages"></div>
-  <img id="nyla" src="assets/nyla/idle.png">
 
   <div class="input">
     <input id="input" placeholder="Message Nyla…">
@@ -207,7 +202,10 @@ body{
   <button onclick="clearChat()">Clear Chat</button>
   <button onclick="deleteMemory()" style="color:#f87171">Delete Memory</button>
   <button onclick="logout()">Logout</button>
-  <div class="settings-footer">Nyla AI • Powered by Groq<br>Made by <b>Stacis Studios</b></div>
+  <div class="settings-footer">
+    Nyla AI • Powered by Groq<br>
+    Made by <b>Stacis Studios</b>
+  </div>
 </div>
 
 <div class="login" id="login">
@@ -222,39 +220,26 @@ body{
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-console.log("Frontend JS loaded ✅");
+/* ================= CONFIG ================= */
+const supabase = window.supabase.createClient(
+  "https://zdgsvguebwfecnlboxiq.supabase.co",
+  "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZ3N2Z3VlYndmZWNubGJveGlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDgyNjMsImV4cCI6MjA4MTI4NDI2M30.SqAzHVqbA5YTgkhpxhEFlBhbLBNumVi4_lnSLoBuKR0"
+);
 
-/* DOM BINDS */
+const API = "https://nyla-api.onrender.com/nyla";
+
+/* ================= STATE ================= */
 const msgs = document.getElementById("messages");
 const input = document.getElementById("input");
 const send = document.getElementById("send");
-const login = document.getElementById("login");
-const openSettings = document.getElementById("openSettings");
+const loginBox = document.getElementById("login");
 const settings = document.getElementById("settings");
 const overlay = document.getElementById("overlay");
 
-/* CONFIG */
-const API = "https://nyla-api.onrender.com/nyla";
-const supabase = window.supabase.createClient(
-  "https://zdgsvguebwfecnlboxiq.supabase.co",
-  "YOUR_ANON_KEY"
-);
-
 let userId = "guest";
 let typingBubble = null;
-let chatsLoaded = false;
 
-/* SETTINGS */
-openSettings.onclick = () => {
-  settings.classList.add("open");
-  overlay.classList.add("open");
-};
-overlay.onclick = () => {
-  settings.classList.remove("open");
-  overlay.classList.remove("open");
-};
-
-/* CHAT UI */
+/* ================= UI ================= */
 function render(text, sender){
   const m = document.createElement("div");
   m.className = "msg " + sender;
@@ -262,47 +247,86 @@ function render(text, sender){
   msgs.appendChild(m);
   msgs.scrollTop = msgs.scrollHeight;
 }
+
 function showTyping(){
   if(typingBubble) return;
   typingBubble = document.createElement("div");
   typingBubble.className = "msg nyla";
-  typingBubble.innerHTML =
-    `<div class="typing"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>`;
+  typingBubble.innerHTML = `
+    <div class="typing">
+      <div class="dot"></div>
+      <div class="dot"></div>
+      <div class="dot"></div>
+    </div>`;
   msgs.appendChild(typingBubble);
 }
+
 function hideTyping(){
   typingBubble?.remove();
   typingBubble = null;
 }
 
-/* SEND */
+/* ================= CHAT ================= */
 send.onclick = async () => {
   const text = input.value.trim();
   if(!text) return;
   input.value = "";
-  render(text, "user");
+  render(text,"user");
   showTyping();
 
-  const r = await fetch(API,{
-    method:"POST",
-    headers:{ "Content-Type":"application/json" },
-    body:JSON.stringify({ message:text, userId })
-  });
-  const d = await r.json();
-  hideTyping();
-  render(d.reply, "nyla");
+  try{
+    const r = await fetch(API,{
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body:JSON.stringify({ message:text, userId })
+    });
+    const d = await r.json();
+    hideTyping();
+    render(d.reply,"nyla");
+  }catch{
+    hideTyping();
+    render("I'm waking up my brain… 🔋","nyla");
+  }
 };
 
-/* AUTH */
-supabase.auth.onAuthStateChange((_e,s)=>{
-  if(s?.user){
-    userId = s.user.id;
-    login.style.display = "none";
+/* ================= AUTH ================= */
+function applySession(session){
+  if(session?.user){
+    userId = session.user.id;
+    loginBox.style.display = "none";
   } else {
     userId = "guest";
-    login.style.display = "flex";
+    loginBox.style.display = "flex";
   }
-});
+}
+
+supabase.auth.onAuthStateChange((_e,s)=>applySession(s));
+supabase.auth.getSession().then(r=>applySession(r.data.session));
+
+async function signIn(){
+  await supabase.auth.signInWithPassword({ email:email.value,password:password.value });
+}
+async function google(){
+  await supabase.auth.signInWithOAuth({ provider:"google", options:{ redirectTo:location.href } });
+}
+function guest(){ loginBox.style.display="none"; }
+async function logout(){
+  await supabase.auth.signOut();
+  location.reload();
+}
+
+/* ================= SETTINGS ================= */
+openSettings.onclick=()=>{
+  settings.classList.add("open");
+  overlay.classList.add("open");
+};
+overlay.onclick=()=>{
+  settings.classList.remove("open");
+  overlay.classList.remove("open");
+};
+
+function clearChat(){ msgs.innerHTML=""; }
+function deleteMemory(){ alert("Memory cleared 💭"); }
 </script>
 
 </body>
