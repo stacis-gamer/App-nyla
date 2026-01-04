@@ -78,11 +78,8 @@ body{
   background:var(--bubble);
 }
 
-/* TYPING INDICATOR */
-.typing{
-  display:flex;
-  gap:6px;
-}
+/* TYPING */
+.typing{display:flex;gap:6px}
 .dot{
   width:8px;height:8px;border-radius:50%;
   background:var(--u2);
@@ -129,34 +126,28 @@ body{
 
 /* SETTINGS */
 .settings-overlay{
-  position:fixed;
-  inset:0;
+  position:fixed;inset:0;
   background:rgba(0,0,0,.4);
-  opacity:0;
-  pointer-events:none;
-  transition:.3s;
-  z-index:9;
+  opacity:0;pointer-events:none;
+  transition:.3s;z-index:9;
 }
 .settings-overlay.open{opacity:1;pointer-events:auto}
 .settings{
-  position:fixed;
-  top:0;
-  right:-280px;
-  width:280px;
-  height:100%;
+  position:fixed;top:0;right:-280px;
+  width:280px;height:100%;
   background:#14141d;
   border-left:1px solid var(--border);
-  padding:1rem;
-  transition:.3s;
-  z-index:10;
+  padding:1rem;transition:.3s;z-index:10;
 }
 .settings.open{right:0}
 .settings details{margin-bottom:1rem}
 .settings summary{cursor:pointer;margin-bottom:.5rem}
 .settings a,.settings button{
-  display:block;width:100%;margin-bottom:.5rem;padding:.6rem;
-  background:var(--bubble);border:none;color:var(--text);
-  border-radius:8px;cursor:pointer;text-decoration:none;
+  display:block;width:100%;
+  margin-bottom:.5rem;padding:.6rem;
+  background:var(--bubble);border:none;
+  color:var(--text);border-radius:8px;
+  cursor:pointer;text-decoration:none;
 }
 .settings-footer{
   position:absolute;bottom:1rem;left:1rem;right:1rem;
@@ -165,17 +156,24 @@ body{
 
 /* LOGIN */
 .login{
-  position:fixed;inset:0;background:rgba(0,0,0,.65);
-  display:none;align-items:center;justify-content:center;z-index:20;
+  position:fixed;inset:0;
+  background:rgba(0,0,0,.65);
+  display:none;align-items:center;justify-content:center;
+  z-index:20;
 }
 .login-box{
-  background:var(--panel);padding:1.5rem;border-radius:16px;width:300px;
+  background:var(--panel);
+  padding:1.5rem;border-radius:16px;
+  width:300px;
 }
 .login-box input,.login-box button{
   width:100%;padding:.6rem;margin-bottom:.6rem;
 }
 .login-box input{background:var(--bubble);color:var(--text)}
-.login-box button{background:linear-gradient(135deg,var(--u1),var(--u2));color:#fff;border:none}
+.login-box button{
+  background:linear-gradient(135deg,var(--u1),var(--u2));
+  border:none;color:#fff;
+}
 .login-box .alt{background:var(--bubble)}
 </style>
 </head>
@@ -226,21 +224,22 @@ body{
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
+/* ================= CONFIG ================= */
 const supabase = window.supabase.createClient(
   "https://zdgsvguebwfecnlboxiq.supabase.co",
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpkZ3N2Z3VlYndmZWNubGJveGlxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjU3MDgyNjMsImV4cCI6MjA4MTI4NDI2M30.SqAzHVqbA5YTgkhpxhEFlBhbLBNumVi4_lnSLoBuKR0"
 );
-
 const API="https://nyla-api.onrender.com/nyla";
+
+/* ================= STATE ================= */
 const msgs=document.getElementById("messages");
 const input=document.getElementById("input");
 const login=document.getElementById("login");
-
 let userId="guest";
-let chatsLoaded=false;
 let typingBubble=null;
+let chatsLoaded=false;
 
-/* AUTH */
+/* ================= AUTH ================= */
 function applySession(session){
   if(session?.user){
     userId=session.user.id;
@@ -248,13 +247,14 @@ function applySession(session){
     if(!chatsLoaded){ loadChats(); chatsLoaded=true; }
   }else{
     userId="guest";
+    chatsLoaded=false;
     login.style.display="flex";
   }
 }
 supabase.auth.onAuthStateChange((_e,s)=>applySession(s));
 supabase.auth.getSession().then(r=>applySession(r.data.session));
 
-/* CHAT UI */
+/* ================= CHAT ================= */
 function render(text,sender){
   const m=document.createElement("div");
   m.className="msg "+sender;
@@ -340,4 +340,4 @@ overlay.onclick=()=>{ settings.classList.remove("open"); overlay.classList.remov
 </script>
 
 </body>
-</html> 
+</html>
